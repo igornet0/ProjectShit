@@ -1,0 +1,20 @@
+[package]
+name = "project-hub-discovery"
+description = "Project discovery and detection engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+project-hub-domain = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+toml = "0.8"
+walkdir = "2"
+
+[dev-dependencies]
+tempfile = "3"

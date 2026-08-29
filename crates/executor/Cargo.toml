@@ -1,0 +1,15 @@
+[package]
+name = "project-hub-executor"
+description = "Command execution for Project Hub"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+project-hub-domain = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+chrono = { workspace = true }

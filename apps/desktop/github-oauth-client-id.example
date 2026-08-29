@@ -1,0 +1,4 @@
+# Copy to github-oauth-client-id (same folder) and paste your Client ID.
+# Create OAuth App: https://github.com/settings/applications/new
+# Name: Project Hub | Homepage: http://localhost | Callback: (leave empty)
+Iv1.your_client_id_here

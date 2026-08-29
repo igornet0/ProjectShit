@@ -1,0 +1,13 @@
+[package]
+name = "project-hub-watcher"
+description = "Filesystem watching abstraction for Project Hub"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }

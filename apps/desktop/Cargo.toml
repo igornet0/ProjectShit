@@ -1,0 +1,38 @@
+[package]
+name = "project-hub-desktop"
+description = "Project Hub desktop application"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+project-hub-domain = { workspace = true }
+project-hub-discovery = { workspace = true }
+project-hub-git = { workspace = true }
+project-hub-database = { workspace = true }
+project-hub-executor = { workspace = true }
+project-hub-watcher = { workspace = true }
+project-hub-github = { workspace = true }
+
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-shell = "2"
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+open = "5"
+tokio = { workspace = true }
+
+[[bin]]
+name = "project-hub"
+path = "src/main.rs"

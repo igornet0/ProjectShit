@@ -1,0 +1,42 @@
+[workspace]
+resolver = "2"
+members = [
+    "apps/desktop",
+    "crates/domain",
+    "crates/discovery",
+    "crates/git",
+    "crates/database",
+    "crates/executor",
+    "crates/watcher",
+    "crates/github",
+]
+
+[workspace.package]
+name = "ProjectShit"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["igornet0"]
+repository = "https://github.com/igornet0/ProjectShit"
+
+[workspace.dependencies]
+# Domain
+project-hub-domain = { path = "crates/domain" }
+project-hub-discovery = { path = "crates/discovery" }
+project-hub-git = { path = "crates/git" }
+project-hub-database = { path = "crates/database" }
+project-hub-executor = { path = "crates/executor" }
+project-hub-watcher = { path = "crates/watcher" }
+project-hub-github = { path = "crates/github" }
+
+# Shared
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+anyhow = "1"
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+async-trait = "0.1"

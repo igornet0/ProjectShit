@@ -1,0 +1,315 @@
+# Makefile.build — release bundles for Project Hub (Tauri 2)
+#
+# Usage:
+#   make -f Makefile.build help
+#   make -f Makefile.build bundle              # native OS bundles (current host)
+#   make -f Makefile.build bundles-native      # all archs buildable on this host
+#   make -f Makefile.build bundle-darwin-universal
+#   make -f Makefile.build bundle-linux-x64 bundle-windows-x64
+#
+# Linux x64 uses Docker by default (linux/amd64 container):
+#   make -f Makefile.build bundle-linux-x64
+#   make -f Makefile.build bundle-linux-x64 NATIVE=1   # skip Docker on x86_64 Linux
+#
+# Other cross-compilation:
+#   make -f Makefile.build bundles-all WINDOWS_RUNNER=cargo-xwin
+#   make -f Makefile.build bundle-linux-arm64 CROSS=1
+#
+# Output: bundles/<target-triple>/...
+
+SHELL := /usr/bin/env bash
+.SHELLFLAGS := -eu -o pipefail -c
+MAKEFLAGS += --warn-undefined-variables
+
+ROOT_DIR     := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+DESKTOP_DIR  := $(ROOT_DIR)/apps/desktop
+FRONTEND_DIR := $(ROOT_DIR)/frontend
+SCRIPTS_DIR  := $(ROOT_DIR)/scripts
+BUNDLES_DIR  := $(ROOT_DIR)/bundles
+
+VERSION := $(shell sed -n 's/^version = "\(.*\)"/\1/p' "$(ROOT_DIR)/Cargo.toml" | head -1)
+
+# Rust target triples
+TARGET_DARWIN_ARM64    := aarch64-apple-darwin
+TARGET_DARWIN_X64      := x86_64-apple-darwin
+TARGET_DARWIN_UNIVERSAL := universal-apple-darwin
+TARGET_LINUX_X64       := x86_64-unknown-linux-gnu
+TARGET_LINUX_ARM64     := aarch64-unknown-linux-gnu
+TARGET_WINDOWS_X64     := x86_64-pc-windows-msvc
+TARGET_WINDOWS_ARM64   := aarch64-pc-windows-msvc
+
+ALL_TARGETS := \
+	$(TARGET_DARWIN_ARM64) \
+	$(TARGET_DARWIN_X64) \
+	$(TARGET_DARWIN_UNIVERSAL) \
+	$(TARGET_LINUX_X64) \
+	$(TARGET_LINUX_ARM64) \
+	$(TARGET_WINDOWS_X64) \
+	$(TARGET_WINDOWS_ARM64)
+
+HOST_OS   := $(shell uname -s)
+HOST_ARCH := $(shell uname -m)
+
+DOCKER                    := docker
+DOCKER_IMAGE_LINUX_X64    := project-hub-builder-linux-x64
+DOCKER_PLATFORM_LINUX_X64 := linux/amd64
+DOCKER_CARGO_REGISTRY_VOL := project-hub-cargo-registry
+DOCKER_CARGO_GIT_VOL      := project-hub-cargo-git
+DOCKER_TARGET_LINUX_X64_VOL := project-hub-target-linux-x64
+
+# Linux x64: Docker by default; NATIVE=1 on x86_64 Linux skips the container
+NATIVE ?=
+USE_DOCKER_LINUX_X64 := 1
+ifeq ($(filter 1 true yes,$(NATIVE)),1)
+  ifeq ($(HOST_OS),Linux)
+    ifeq ($(HOST_ARCH),x86_64)
+      USE_DOCKER_LINUX_X64 := 0
+    endif
+  endif
+endif
+
+# Windows cross-build runner (cargo-xwin). Legacy: RUNNER=cargo-xwin also works.
+WINDOWS_RUNNER ?=
+RUNNER ?=
+ifneq ($(filter command line environment,$(origin RUNNER)),)
+  ifneq ($(RUNNER),)
+    WINDOWS_RUNNER := $(RUNNER)
+  endif
+  override RUNNER :=
+endif
+WINDOWS_RUNNER_FLAG := $(if $(WINDOWS_RUNNER),--runner $(WINDOWS_RUNNER),)
+
+# Optional: use `cross` for Linux cross-compilation from non-Linux hosts
+CROSS ?=
+ifeq ($(filter 1 true yes,$(CROSS)),1)
+  TAURI_BUILD := cross cargo tauri build
+else
+  TAURI_BUILD := cargo tauri build
+endif
+
+# Override target for generic `bundle` / `build` targets
+TARGET ?=
+TARGET_FLAG := $(if $(TARGET),--target $(TARGET),)
+
+ifeq ($(TARGET),)
+  TARGET_DIR_REL := target/release
+else
+  TARGET_DIR_REL := target/$(TARGET)/release
+endif
+
+BUNDLE_SRC := $(DESKTOP_DIR)/$(TARGET_DIR_REL)/bundle
+
+# Skip tauri beforeBuildCommand (frontend built by Makefile)
+TAURI_ENV := CI=true
+TAURI_CI_FLAG := --ci
+
+# ── Help ─────────────────────────────────────────────────────────────────────
+
+.PHONY: help
+help: ## Show targets and current host
+	@echo "Project Hub $(VERSION) — bundle builds"
+	@echo "Host: $(HOST_OS) / $(HOST_ARCH)"
+	@echo ""
+	@echo "Quick:"
+	@echo "  bundle              Native installers for this OS"
+	@echo "  bundles-native      All archs buildable on this host (no cross)"
+	@echo "  bundles-all         Every target (needs cross toolchains / OS VMs)"
+	@echo ""
+	@echo "macOS (run on macOS):"
+	@echo "  bundle-darwin-arm64      $(TARGET_DARWIN_ARM64)"
+	@echo "  bundle-darwin-x64        $(TARGET_DARWIN_X64)"
+	@echo "  bundle-darwin-universal  $(TARGET_DARWIN_UNIVERSAL)"
+	@echo "  bundles-darwin           all macOS targets"
+	@echo ""
+	@echo "Linux:"
+	@echo "  bundle-linux-x64         $(TARGET_LINUX_X64)  (Docker linux/amd64; NATIVE=1 on x64 Linux)"
+	@echo "  bundle-linux-arm64       $(TARGET_LINUX_ARM64)  (CROSS=1 on non-Linux)"
+	@echo "  bundles-linux            both Linux targets"
+	@echo "  docker-image-linux-x64   build Docker builder image"
+	@echo ""
+	@echo "Windows (cargo-xwin on macOS/Linux):"
+	@echo "  bundle-windows-x64       $(TARGET_WINDOWS_X64)"
+	@echo "  bundle-windows-arm64       $(TARGET_WINDOWS_ARM64)"
+	@echo "  bundles-windows            both Windows targets"
+	@echo "  WINDOWS_RUNNER=cargo-xwin  for bundles-all / bundle-windows-*"
+	@echo ""
+	@echo "Setup:"
+	@echo "  deps                 npm ci + rust targets"
+	@echo "  deps-linux           apt packages for Tauri on Ubuntu/Debian"
+	@echo "  tauri-cli            install cargo-tauri CLI"
+	@echo "  rust-targets         rustup target add (all triples)"
+	@echo "  clean                remove bundle output + cargo artifacts"
+	@echo ""
+	@grep -E '^[a-zA-Z0-9_.-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /  /' | sort
+
+# ── Setup ────────────────────────────────────────────────────────────────────
+
+.PHONY: deps frontend-deps tauri-cli rust-targets deps-linux \
+	docker-image-linux-x64 bundle-linux-x64-docker
+
+deps: frontend-deps rust-targets ## Install JS deps and Rust cross targets
+
+frontend-deps: ## npm ci in frontend/
+	@if [ ! -f "$(FRONTEND_DIR)/package-lock.json" ]; then \
+		echo "package-lock.json missing; running npm install"; \
+		cd "$(FRONTEND_DIR)" && npm install; \
+	else \
+		cd "$(FRONTEND_DIR)" && npm ci; \
+	fi
+
+tauri-cli: ## Install tauri-cli v2 (cargo install)
+	cargo install tauri-cli --version "^2" --locked
+
+rust-targets: ## Add all bundle target triples to rustup
+	rustup target add $(ALL_TARGETS)
+
+deps-linux: ## Ubuntu/Debian packages for Tauri Linux builds
+	sudo apt-get update
+	sudo apt-get install -y \
+		libwebkit2gtk-4.1-dev \
+		libappindicator3-dev \
+		librsvg2-dev \
+		patchelf \
+		build-essential \
+		curl \
+		wget \
+		file \
+		libssl-dev \
+		libgtk-3-dev
+
+# ── Frontend ─────────────────────────────────────────────────────────────────
+
+.PHONY: frontend
+frontend: frontend-deps ## Build frontend (Vite → frontend/dist)
+	cd "$(FRONTEND_DIR)" && npm run build
+
+# ── Generic build / bundle (native or TARGET=...) ────────────────────────────
+
+.PHONY: build bundle bundle-inner
+build: frontend ## cargo tauri build --no-bundle
+	cd "$(DESKTOP_DIR)" && $(TAURI_ENV) $(TAURI_BUILD) $(TAURI_CI_FLAG) --no-bundle $(TARGET_FLAG)
+
+bundle: frontend ## Platform installers for native or TARGET triple
+	@$(MAKE) -f Makefile.build bundle-inner TARGET="$(TARGET)"
+
+bundle-inner: ## Tauri bundle only (frontend must exist in frontend/dist)
+	cd "$(DESKTOP_DIR)" && $(TAURI_ENV) $(TAURI_BUILD) $(TAURI_CI_FLAG) $(TARGET_FLAG) $(WINDOWS_RUNNER_FLAG)
+	@$(MAKE) -f Makefile.build collect TARGET="$(TARGET)"
+
+# ── macOS ────────────────────────────────────────────────────────────────────
+
+.PHONY: bundles-darwin bundle-darwin-arm64 bundle-darwin-x64 bundle-darwin-universal
+
+bundles-darwin: frontend bundle-darwin-arm64 bundle-darwin-x64 bundle-darwin-universal ## All macOS bundles
+
+bundle-darwin-arm64: ## .app + .dmg for Apple Silicon
+	@$(MAKE) -f Makefile.build bundle-inner TARGET=$(TARGET_DARWIN_ARM64) WINDOWS_RUNNER=
+
+bundle-darwin-x64: ## .app + .dmg for Intel macOS
+	@$(MAKE) -f Makefile.build bundle-inner TARGET=$(TARGET_DARWIN_X64) WINDOWS_RUNNER=
+
+bundle-darwin-universal: ## Universal .app + .dmg (arm64 + x64)
+	@$(MAKE) -f Makefile.build bundle-inner TARGET=$(TARGET_DARWIN_UNIVERSAL) WINDOWS_RUNNER=
+
+# ── Linux ────────────────────────────────────────────────────────────────────
+
+.PHONY: bundles-linux bundle-linux-x64 bundle-linux-arm64
+
+bundles-linux: frontend bundle-linux-x64 bundle-linux-arm64 ## deb + AppImage for both Linux archs
+
+docker-image-linux-x64: ## Build Docker image for Linux x64 Tauri builds
+	$(DOCKER) build \
+		--platform $(DOCKER_PLATFORM_LINUX_X64) \
+		-f "$(ROOT_DIR)/docker/linux-x64.Dockerfile" \
+		-t "$(DOCKER_IMAGE_LINUX_X64)" \
+		"$(ROOT_DIR)"
+
+bundle-linux-x64-docker: frontend docker-image-linux-x64 ## deb + AppImage x86_64 via Docker
+	$(DOCKER) run --rm \
+		--platform $(DOCKER_PLATFORM_LINUX_X64) \
+		-v "$(ROOT_DIR):/workspace" \
+		-v "$(DOCKER_CARGO_REGISTRY_VOL):/root/.cargo/registry" \
+		-v "$(DOCKER_CARGO_GIT_VOL):/root/.cargo/git" \
+		-v "$(DOCKER_TARGET_LINUX_X64_VOL):/workspace/apps/desktop/target" \
+		-w /workspace/apps/desktop \
+		"$(DOCKER_IMAGE_LINUX_X64)" \
+		env CI=true cargo tauri build --ci
+	@$(MAKE) -f Makefile.build collect COLLECT_AS=$(TARGET_LINUX_X64)
+
+ifeq ($(USE_DOCKER_LINUX_X64),1)
+bundle-linux-x64: bundle-linux-x64-docker ## deb + AppImage x86_64 (Docker)
+else
+bundle-linux-x64: frontend ## deb + AppImage x86_64 (native x86_64 Linux)
+	@$(MAKE) -f Makefile.build bundle-inner TARGET=$(TARGET_LINUX_X64) WINDOWS_RUNNER=
+endif
+
+bundle-linux-arm64: ## deb + AppImage aarch64
+	@$(MAKE) -f Makefile.build bundle-inner TARGET=$(TARGET_LINUX_ARM64) CROSS=$(CROSS) WINDOWS_RUNNER=
+
+# ── Windows ──────────────────────────────────────────────────────────────────
+
+.PHONY: bundles-windows bundle-windows-x64 bundle-windows-arm64
+
+bundles-windows: frontend bundle-windows-x64 bundle-windows-arm64 ## msi + nsis for both Windows archs
+
+bundle-windows-x64: ## msi + nsis x86_64
+	@$(MAKE) -f Makefile.build bundle-inner TARGET=$(TARGET_WINDOWS_X64) WINDOWS_RUNNER=$(WINDOWS_RUNNER)
+
+bundle-windows-arm64: ## msi + nsis arm64
+	@$(MAKE) -f Makefile.build bundle-inner TARGET=$(TARGET_WINDOWS_ARM64) WINDOWS_RUNNER=$(WINDOWS_RUNNER)
+
+# ── Host-aware groups ────────────────────────────────────────────────────────
+
+.PHONY: bundles-native bundles-all
+
+bundles-native: ## Bundles for current OS (no cross-compilation)
+ifeq ($(HOST_OS),Darwin)
+	@$(MAKE) -f Makefile.build bundles-darwin
+else ifeq ($(HOST_OS),Linux)
+	@$(MAKE) -f Makefile.build bundles-linux
+else
+	@$(MAKE) -f Makefile.build bundles-windows
+endif
+
+bundles-all: frontend ## All OS/arch targets (cross toolchains required off native hosts)
+	@$(MAKE) -f Makefile.build bundle-inner TARGET=$(TARGET_DARWIN_ARM64) WINDOWS_RUNNER=
+	@$(MAKE) -f Makefile.build bundle-inner TARGET=$(TARGET_DARWIN_X64) WINDOWS_RUNNER=
+	@$(MAKE) -f Makefile.build bundle-inner TARGET=$(TARGET_DARWIN_UNIVERSAL) WINDOWS_RUNNER=
+	@$(MAKE) -f Makefile.build bundle-linux-x64
+	@$(MAKE) -f Makefile.build bundle-inner TARGET=$(TARGET_LINUX_ARM64) CROSS=1 WINDOWS_RUNNER=
+	@$(MAKE) -f Makefile.build bundle-inner TARGET=$(TARGET_WINDOWS_X64) WINDOWS_RUNNER=$(WINDOWS_RUNNER)
+	@$(MAKE) -f Makefile.build bundle-inner TARGET=$(TARGET_WINDOWS_ARM64) WINDOWS_RUNNER=$(WINDOWS_RUNNER)
+
+# ── Collect artifacts ────────────────────────────────────────────────────────
+
+COLLECT_AS ?=
+
+.PHONY: collect
+collect: ## Copy bundle/ tree into bundles/<target>/
+	@dest_name="$(COLLECT_AS)"; \
+	if [ -z "$$dest_name" ]; then dest_name="$(TARGET)"; fi; \
+	if [ -z "$$dest_name" ]; then dest_name="native-$(HOST_OS)-$(HOST_ARCH)"; fi; \
+	src="$(DESKTOP_DIR)/target"; \
+	if [ -n "$(TARGET)" ]; then \
+		bundle_dir="$$src/$(TARGET)/release/bundle"; \
+	else \
+		bundle_dir="$$src/release/bundle"; \
+	fi; \
+	if [ ! -d "$$bundle_dir" ]; then \
+		echo "No bundle output at $$bundle_dir"; \
+		exit 1; \
+	fi; \
+	mkdir -p "$(BUNDLES_DIR)/$$dest_name"; \
+	rsync -a --delete "$$bundle_dir/" "$(BUNDLES_DIR)/$$dest_name/"; \
+	echo "→ $(BUNDLES_DIR)/$$dest_name/"
+
+# ── Clean ────────────────────────────────────────────────────────────────────
+
+.PHONY: clean clean-bundles clean-target
+clean: clean-bundles clean-target ## Remove bundles/ and apps/desktop/target/
+
+clean-bundles:
+	rm -rf "$(BUNDLES_DIR)"
+
+clean-target:
+	rm -rf "$(DESKTOP_DIR)/target"

@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "../../frontend/dist",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "sh ../scripts/dev-frontend.sh",
-    "beforeBuildCommand": "sh ../scripts/build-frontend.sh"
+    "beforeDevCommand": "bash ../../scripts/dev-frontend.sh",
+    "beforeBuildCommand": ""
   },
   "app": {
     "windows": [

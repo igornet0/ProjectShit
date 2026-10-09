@@ -12,7 +12,9 @@ impl GitService {
     }
 
     pub fn is_dirty(path: &Path) -> bool {
-        Self::get_status(path).map(|s| s.modified + s.staged + s.untracked > 0).unwrap_or(false)
+        GitRepository::open(path)
+            .and_then(|repo| repo.is_dirty_fast())
+            .unwrap_or(false)
     }
 
     pub fn has_git(path: &Path) -> bool {

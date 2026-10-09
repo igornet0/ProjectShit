@@ -3,6 +3,7 @@ import { open, ask } from "@tauri-apps/plugin-dialog";
 import { ProjectGrid } from "@/components/ProjectGrid/ProjectGrid";
 import { FolderSidebar } from "@/components/FolderSidebar/FolderSidebar";
 import { GhostProjectCard } from "@/components/GhostProjectCard/GhostProjectCard";
+import { Icon } from "@/components/Icon/Icon";
 import { useProjectStore, useFolderStore, useGitHubStore } from "@/stores";
 import { useTranslation } from "@/i18n";
 import type { HubProjectEntry, ProjectListItem } from "@/types";
@@ -80,11 +81,10 @@ export function ProjectsPage() {
   );
 
   useEffect(() => {
-    fetchProjects();
     fetchGroups();
     fetchFolders();
     fetchConfig();
-  }, [fetchProjects, fetchGroups, fetchFolders, fetchConfig]);
+  }, [fetchGroups, fetchFolders, fetchConfig]);
 
   useEffect(() => {
     fetchProjects();
@@ -160,7 +160,7 @@ export function ProjectsPage() {
       const newStatus = project.status === "archived" ? "active" : "archived";
       await updateProject({ id: project.id, status: newStatus });
       if (!showArchived && newStatus === "archived") {
-        await fetchProjects();
+        await fetchProjects(true);
       }
     },
     [updateProject, showArchived, fetchProjects],
@@ -186,86 +186,88 @@ export function ProjectsPage() {
 
   return (
     <div className="page projects">
-      <header className="page-header row hero-header">
+      <header className="page-header">
         <div>
-          <p className="eyebrow">{t("nav.projects")}</p>
-          <h1>{t("projects.title")}</h1>
-          <p className="muted">{t("projects.subtitle")}</p>
+          <h1>{t("nav.projects")}</h1>
+          <p className="page-subtitle">{t("projects.subtitle")}</p>
         </div>
-        <button className="btn primary" onClick={handleAddProject}>
-          {t("projects.addProject")}
-        </button>
+        <div className="page-actions">
+          <button className="btn primary" onClick={handleAddProject}>
+            <Icon name="plus" size={14} />
+            {t("projects.addProject")}
+          </button>
+        </div>
       </header>
 
       <div className="projects-layout">
         <FolderSidebar />
 
         <div className="projects-main">
-          <div className="projects-toolbar panel">
-            <div className="search-bar inline">
+          <div className="toolbar">
+            <label className="input-with-icon">
+              <Icon name="search" size={14} />
               <input
                 type="search"
                 placeholder={t("projects.searchPlaceholder")}
+                aria-label={t("projects.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-            </div>
+            </label>
 
-            <div className="filter-row">
-              <label className="filter-field">
-                <span>{t("projects.filterGroup")}</span>
-                <select
-                  value={filterGroup}
-                  onChange={(e) => setFilterGroup(e.target.value)}
-                >
-                  {groupOptions.map((g) => (
-                    <option key={g} value={g}>
-                      {g === "all"
-                        ? t("projects.allGroups")
-                        : g === "ungrouped"
-                          ? t("projects.ungrouped")
-                          : g}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            <select
+              value={filterGroup}
+              aria-label={t("projects.filterGroup")}
+              title={t("projects.filterGroup")}
+              onChange={(e) => setFilterGroup(e.target.value)}
+            >
+              {groupOptions.map((g) => (
+                <option key={g} value={g}>
+                  {g === "all"
+                    ? t("projects.allGroups")
+                    : g === "ungrouped"
+                      ? t("projects.ungrouped")
+                      : g}
+                </option>
+              ))}
+            </select>
 
-              <label className="filter-field">
-                <span>{t("projects.filterLanguage")}</span>
-                <select
-                  value={filterLanguage}
-                  onChange={(e) => setFilterLanguage(e.target.value)}
-                >
-                  {LANGUAGES.map((lang) => (
-                    <option key={lang} value={lang}>
-                      {lang === "all"
-                        ? t("projects.allLanguages")
-                        : t(`enums.language.${lang}`)}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            <select
+              value={filterLanguage}
+              aria-label={t("projects.filterLanguage")}
+              title={t("projects.filterLanguage")}
+              onChange={(e) => setFilterLanguage(e.target.value)}
+            >
+              {LANGUAGES.map((lang) => (
+                <option key={lang} value={lang}>
+                  {lang === "all"
+                    ? t("projects.allLanguages")
+                    : t(`enums.language.${lang}`)}
+                </option>
+              ))}
+            </select>
 
-              <label className="filter-toggle">
+            <span className="toolbar-spacer" />
+
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
+              />
+              <span>{t("projects.showArchived")}</span>
+            </label>
+
+            {config?.connected && (
+              <label className="toggle">
                 <input
                   type="checkbox"
-                  checked={showArchived}
-                  onChange={(e) => setShowArchived(e.target.checked)}
+                  checked={showGithub}
+                  onChange={(e) => setShowGithub(e.target.checked)}
                 />
-                <span>{t("projects.showArchived")}</span>
+                <span>{t("projects.showGithub")}</span>
               </label>
-
-              {config?.connected && (
-                <label className="filter-toggle">
-                  <input
-                    type="checkbox"
-                    checked={showGithub}
-                    onChange={(e) => setShowGithub(e.target.checked)}
-                  />
-                  <span>{t("projects.showGithub")}</span>
-                </label>
-              )}
-            </div>
+            )}
           </div>
 
           {error && <div className="error-banner">{error}</div>}
@@ -283,10 +285,15 @@ export function ProjectsPage() {
           />
 
           {showGithub && config?.connected && ghosts.length > 0 && (
-            <section className="ghost-section">
-              <h2>{t("projects.ghostSection")}</h2>
-              <p className="muted">{t("projects.ghostHint")}</p>
-              <div className="project-grid">
+            <section className="panel ghost-section">
+              <div className="panel-header">
+                <h2>
+                  <Icon name="github" size={14} />
+                  {t("projects.ghostSection")}
+                </h2>
+                <p>{t("projects.ghostHint")}</p>
+              </div>
+              <div role="table">
                 {ghosts.map((entry) => (
                   <GhostProjectCard
                     key={entry.github_repo.id}

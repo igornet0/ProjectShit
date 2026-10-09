@@ -5,7 +5,8 @@
     "tasks": "Tareas",
     "calendar": "Calendario",
     "settings": "Ajustes",
-    "commandHint": "Pulse {{shortcut}} para abrir la paleta de comandos"
+    "commandHint": "Pulse {{shortcut}} para abrir la paleta de comandos",
+    "search": "Buscar"
   },
   "common": {
     "loading": "Cargando…",
@@ -16,7 +17,8 @@
     "viewAll": "Ver todo →",
     "backToProjects": "← Proyectos",
     "notFound": "No encontrado",
-    "shortcut": "⌘K"
+    "shortcut": "⌘K",
+    "save": "Guardar"
   },
   "greeting": {
     "morning": "Buenos días",
@@ -33,7 +35,7 @@
   "projects": {
     "title": "Project Hub",
     "subtitle": "Galería de proyectos local-first",
-    "addProject": "+ Añadir proyecto",
+    "addProject": "Añadir proyecto",
     "searchPlaceholder": "Buscar proyectos…",
     "selectDirectory": "Seleccionar directorio del proyecto",
     "emptyTitle": "Aún no hay proyectos",
@@ -62,7 +64,11 @@
     "ghost": "Not installed",
     "install": "Install",
     "ghostSection": "GitHub — not on this machine",
-    "ghostHint": "These repos are on your GitHub but not cloned locally yet."
+    "ghostHint": "These repos are on your GitHub but not cloned locally yet.",
+    "columns": {
+      "name": "Nombre",
+      "path": "Ruta"
+    }
   },
   "projectDetail": {
     "loading": "Cargando proyecto…",
@@ -86,7 +92,28 @@
     "title": "Tareas",
     "newPlaceholder": "Nueva tarea…",
     "loading": "Cargando tareas…",
-    "empty": "Aún no hay tareas."
+    "empty": "Aún no hay tareas.",
+    "priority": "Prioridad",
+    "status": "Estado",
+    "dueDate": "Fecha límite",
+    "personal": "Personal",
+    "allStatuses": "Todos los estados",
+    "allPriorities": "Todas las prioridades",
+    "openOnly": "Abiertas",
+    "repeat": "Repetir",
+    "repeatNone": "No se repite",
+    "repeatEvery": "Cada",
+    "repeatUntil": "Hasta",
+    "repeatNoEnd": "Sin fecha de fin",
+    "repeatProjected": "Próxima repetición",
+    "repeatEveryN": "cada {{count}} {{unit}}",
+    "project": "Proyecto",
+    "description": "Descripción",
+    "openProject": "Abrir proyecto",
+    "delete": "Eliminar tarea",
+    "deleteConfirm": "¿Eliminar la tarea «{{title}}»?",
+    "stopRepeat": "Dejar de repetir",
+    "descriptionPlaceholder": "Añade detalles…"
   },
   "calendar": {
     "title": "Calendario",
@@ -99,20 +126,29 @@
       "fri": "Vie",
       "sat": "Sáb",
       "sun": "Dom"
-    }
+    },
+    "showEvents": "Eventos",
+    "today": "Hoy",
+    "prevMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente"
   },
   "settings": {
     "title": "Ajustes",
+    "subtitle": "Idioma, editores, sincronización GitHub y directorios",
     "language": "Idioma",
     "languageHint": "Elige el idioma de la interfaz. Se aplica al instante.",
     "projectRoots": "Raíces de proyecto",
     "projectRootsHint": "Directorios escaneados en busca de proyectos. Añade raíces desde la página de Proyectos.",
     "noRoots": "No hay raíces de proyecto configuradas.",
+    "rootsCount": "{{count}} directorios",
+    "goToProjects": "Gestionar en la página Proyectos",
     "about": "Acerca de",
     "aboutText": "Project Hub v0.1 — Espacio de trabajo para desarrolladores local-first",
     "editors": "IDE / Editor",
     "editorsHint": "Choose the default editor for opening projects. Use {path} in custom command args.",
     "defaultEditor": "Default editor",
+    "defaultBadge": "Default",
+    "installedEditors": "Installed editors",
     "customEditors": "Custom editors",
     "addCustomEditor": "Add custom editor",
     "editorId": "ID",
@@ -138,13 +174,22 @@
     "githubOAuthClientIdPlaceholder": "Or set GITHUB_OAUTH_CLIENT_ID env var",
     "githubCreateOAuthApp": "Create OAuth App",
     "githubAdvanced": "Advanced",
-    "githubRepoStats": "{{local}} local · {{remote}} on GitHub"
+    "githubRepoStats": "{{local}} local · {{remote}} on GitHub",
+    "githubLocal": "Local repos",
+    "githubRemote": "Not cloned",
+    "brdd": ".brdd & automation",
+    "brddHint": "Per-project analysis folder, version tracking and GitHub issue sync."
   },
   "commandPalette": {
     "placeholder": "Buscar proyectos, acciones…",
     "openProject": "Abrir {{name}}",
     "searchProjects": "Buscar proyectos",
-    "createTask": "Crear tarea"
+    "createTask": "Crear tarea",
+    "actions": "Acciones",
+    "navigate": "navegar",
+    "select": "abrir",
+    "close": "cerrar",
+    "empty": "Sin resultados"
   },
   "git": {
     "loading": "Cargando estado de Git…",
@@ -182,6 +227,32 @@
       "web": "Web",
       "embedded": "Embebido",
       "unknown": "Desconocido"
+    },
+    "taskStatus": {
+      "todo": "Pendiente",
+      "in_progress": "En curso",
+      "done": "Hecho",
+      "cancelled": "Cancelada"
+    },
+    "taskPriority": {
+      "low": "Baja",
+      "medium": "Media",
+      "high": "Alta",
+      "critical": "Crítica"
+    },
+    "recurrence": {
+      "daily": "Diaria",
+      "weekly": "Semanal",
+      "monthly": "Mensual",
+      "quarterly": "Trimestral",
+      "yearly": "Anual"
+    },
+    "recurrenceUnit": {
+      "daily": "d",
+      "weekly": "sem.",
+      "monthly": "mes.",
+      "quarterly": "trim.",
+      "yearly": "año"
     }
   },
   "folders": {
@@ -195,5 +266,38 @@
     "views": "Views",
     "myFolders": "My folders",
     "dragHint": "Drag to reorder"
+  },
+  "brdd": {
+    "snapshots": "{{count}} snapshots",
+    "refresh": "Refresh",
+    "create": "Create .brdd",
+    "snapshot": "Snapshot",
+    "snapshotHint": "Record a version snapshot even if nothing changed",
+    "empty": "No .brdd folder yet. It holds a short analysis of the project, version snapshots and a changelog — create it to start tracking.",
+    "size": "{{files}} files · {{loc}} LOC",
+    "tasks": "tasks {{done}}/{{total}}",
+    "analyzed": "analyzed {{when}}",
+    "lastSnapshot": "snapshot #{{n}} ({{reason}})",
+    "reason": {
+      "initial": "first",
+      "version": "version changed",
+      "commits": "new commits",
+      "manual": "manual"
+    },
+    "tab": {
+      "summary": "Summary",
+      "changes": "Changes",
+      "notes": "AI notes"
+    },
+    "notesPlaceholder": "Notes about the project — written by you or by an AI agent (BoardDo). Kept across refreshes.",
+    "notesHint": "Saved to .brdd/ai-summary.md",
+    "autoOnScan": "Maintain .brdd automatically",
+    "autoOnScanHint": "Refresh the folder of every project found or refreshed by a scan.",
+    "excludeFromGit": "Keep .brdd out of git",
+    "excludeFromGitHint": "Adds /.brdd/ to .git/info/exclude (local only) so the repository stays clean.",
+    "refreshAll": "Refresh .brdd for all projects",
+    "refreshAllDone": "Refreshed: {{ok}}, failed: {{failed}}",
+    "syncIssues": "Sync GitHub issues",
+    "issuesSynced": "Checked {{checked}} linked issues · tasks done: {{done}} · issues closed: {{closed}}"
   }
 }

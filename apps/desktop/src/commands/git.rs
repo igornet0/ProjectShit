@@ -18,13 +18,19 @@ pub async fn git_status(state: State<'_, SharedState>, project_id: String) -> Re
         .map(project_hub_domain::ProjectId::from_uuid)
         .map_err(|e| e.to_string())?;
 
-    let state = state.lock().await;
+    let state = state.inner();
     let project = ProjectService::get(&state, &id)
         .await
         .map_err(|e| e.to_string())?;
 
-    let status = GitFacade::status(&project).map_err(|e| e.to_string())?;
-    let recent_commits = GitFacade::history(&project, 10).map_err(|e| e.to_string())?;
+    let (status, recent_commits) = tokio::task::spawn_blocking(move || {
+        let status = GitFacade::status(&project)?;
+        let recent_commits = GitFacade::history(&project, 10)?;
+        Ok::<_, crate::services::ServiceError>((status, recent_commits))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| e.to_string())?;
 
     Ok(GitStatusResponse {
         status,
@@ -42,7 +48,7 @@ pub async fn commands_run(
         .map(project_hub_domain::ProjectId::from_uuid)
         .map_err(|e| e.to_string())?;
 
-    let state = state.lock().await;
+    let state = state.inner();
     let project = ProjectService::get(&state, &id)
         .await
         .map_err(|e| e.to_string())?;
@@ -57,7 +63,7 @@ pub async fn activity_list(
     state: State<'_, SharedState>,
     limit: Option<i64>,
 ) -> Result<Vec<project_hub_domain::Activity>, String> {
-    let state = state.lock().await;
+    let state = state.inner();
     ActivityService::list(&state, limit.unwrap_or(50))
         .await
         .map_err(|e| e.to_string())
@@ -73,7 +79,7 @@ pub async fn activity_list_by_project(
         .map(project_hub_domain::ProjectId::from_uuid)
         .map_err(|e| e.to_string())?;
 
-    let state = state.lock().await;
+    let state = state.inner();
     ActivityService::list_by_project(&state, &id, limit.unwrap_or(50))
         .await
         .map_err(|e| e.to_string())

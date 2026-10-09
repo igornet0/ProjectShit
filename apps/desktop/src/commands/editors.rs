@@ -31,7 +31,7 @@ pub async fn projects_list_summaries(
     state: State<'_, SharedState>,
     include_archived: Option<bool>,
 ) -> Result<Vec<ProjectListItem>, String> {
-    let state = state.lock().await;
+    let state = state.inner();
     ProjectService::list_summaries(&state, include_archived.unwrap_or(false))
         .await
         .map_err(|e| e.to_string())
@@ -39,7 +39,7 @@ pub async fn projects_list_summaries(
 
 #[tauri::command]
 pub async fn projects_list_groups(state: State<'_, SharedState>) -> Result<Vec<String>, String> {
-    let state = state.lock().await;
+    let state = state.inner();
     ProjectService::list_groups(&state)
         .await
         .map_err(|e| e.to_string())
@@ -48,7 +48,7 @@ pub async fn projects_list_groups(state: State<'_, SharedState>) -> Result<Vec<S
 #[tauri::command]
 pub async fn projects_mark_opened(state: State<'_, SharedState>, id: String) -> Result<(), String> {
     let project_id = parse_project_id(&id)?;
-    let state = state.lock().await;
+    let state = state.inner();
     ProjectService::mark_opened(&state, &project_id)
         .await
         .map_err(|e| e.to_string())
@@ -60,7 +60,7 @@ pub async fn projects_update(
     input: UpdateProjectInput,
 ) -> Result<Project, String> {
     let project_id = parse_project_id(&input.id)?;
-    let state = state.lock().await;
+    let state = state.inner();
     let mut project = ProjectService::get(&state, &project_id)
         .await
         .map_err(|e| e.to_string())?;
@@ -87,7 +87,7 @@ pub async fn projects_open_in_editor(
     editor_id: Option<String>,
 ) -> Result<(), String> {
     let project_id = parse_project_id(&id)?;
-    let state = state.lock().await;
+    let state = state.inner();
     let project = ProjectService::get(&state, &project_id)
         .await
         .map_err(|e| e.to_string())?;
@@ -98,7 +98,7 @@ pub async fn projects_open_in_editor(
 
 #[tauri::command]
 pub async fn editors_get_config(state: State<'_, SharedState>) -> Result<EditorConfig, String> {
-    let state = state.lock().await;
+    let state = state.inner();
     EditorService::get_config(&state)
         .await
         .map_err(|e| e.to_string())
@@ -109,7 +109,7 @@ pub async fn editors_save_config(
     state: State<'_, SharedState>,
     input: SaveEditorConfigInput,
 ) -> Result<EditorConfig, String> {
-    let state = state.lock().await;
+    let state = state.inner();
     let config = EditorConfig {
         default_editor_id: input.default_editor_id,
         editors: input.editors,
@@ -125,7 +125,7 @@ pub async fn editors_add_custom(
     state: State<'_, SharedState>,
     input: AddCustomEditorInput,
 ) -> Result<EditorConfig, String> {
-    let state = state.lock().await;
+    let state = state.inner();
     let mut config = EditorService::get_config(&state)
         .await
         .map_err(|e| e.to_string())?;

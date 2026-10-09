@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import type { ProjectListItem } from "@/types";
-import { LANGUAGE_ICONS, STATUS_COLORS } from "@/types";
-import { useTranslation, useLocaleStore } from "@/i18n";
+import { Icon } from "@/components/Icon/Icon";
+import { useTranslation } from "@/i18n";
 import { useFolderStore, useProjectStore } from "@/stores";
+import { formatRelative, languageColor, shortPath } from "@/utils/format";
 
 interface ProjectCardProps {
   project: ProjectListItem;
@@ -17,6 +18,7 @@ interface ProjectCardProps {
   onArchive: (project: ProjectListItem) => void;
 }
 
+/** One project rendered as a row of the project table. */
 export function ProjectCard({
   project,
   depth = 0,
@@ -29,16 +31,12 @@ export function ProjectCard({
   onRemove,
   onArchive,
 }: ProjectCardProps) {
-  const { t } = useTranslation();
-  const locale = useLocaleStore((s) => s.locale);
-  const { folders } = useFolderStore();
-  const { assignToFolder } = useProjectStore();
+  const { t, locale } = useTranslation();
+  const folders = useFolderStore((s) => s.folders);
+  const assignToFolder = useProjectStore((s) => s.assignToFolder);
   const hasChildren = project.child_count > 0;
-  const icon =
-    project.icon ??
-    (hasChildren ? "📁" : LANGUAGE_ICONS[project.language]) ??
-    "📁";
-  const statusColor = STATUS_COLORS[project.status];
+  const archived = project.status === "archived";
+  const archiveLabel = archived ? t("projects.unarchive") : t("projects.archive");
 
   const handleAction =
     (action: (project: ProjectListItem) => void) =>
@@ -48,102 +46,95 @@ export function ProjectCard({
       action(project);
     };
 
+  const lang = (
+    <span className="lang project-lang">
+      <span
+        className="dot"
+        style={{ "--dot-color": languageColor(project.language) } as React.CSSProperties}
+      />
+      {t(`enums.language.${project.language}`)}
+    </span>
+  );
+
   return (
-    <article
-      className={`project-card ${project.status === "archived" ? "archived" : ""} ${hasChildren ? "has-children" : ""} ${compact ? "compact" : ""}`}
-      data-lang={project.language}
+    <div
+      className={`project-row${archived ? " archived" : ""}${compact ? " compact" : ""}`}
+      role="row"
       style={{ "--tree-depth": depth } as React.CSSProperties}
     >
-      {project.git_dirty && (
-        <span className="git-warning" title={t("projects.gitDirty")}>
-          ⚠️
+      <div className="project-name-cell" role="cell">
+        {!compact &&
+          (hasChildren && onToggleExpand ? (
+            <button
+              type="button"
+              className="tree-toggle"
+              aria-label={
+                expanded ? t("projects.collapseChildren") : t("projects.expandChildren")
+              }
+              title={expanded ? t("projects.collapseChildren") : t("projects.expandChildren")}
+              aria-expanded={expanded}
+              onClick={handleAction(onToggleExpand)}
+            >
+              <Icon name={expanded ? "chevronDown" : "chevronRight"} size={14} />
+            </button>
+          ) : (
+            <span className="tree-spacer" />
+          ))}
+
+        {project.icon && <span aria-hidden="true">{project.icon}</span>}
+
+        <Link
+          to={`/projects/${project.id}`}
+          className="project-name"
+          title={project.root_path}
+          onClick={() => onNavigate(project)}
+        >
+          {project.name}
+        </Link>
+
+        {project.git_dirty && (
+          <span className="dirty-dot" title={t("projects.gitDirty")} />
+        )}
+        {project.group_name && <span className="badge">{project.group_name}</span>}
+        {hasChildren && (
+          <span className="badge outline">
+            {t("projects.childCount", { count: project.child_count })}
+          </span>
+        )}
+        {archived && <span className="badge">{t("enums.status.archived")}</span>}
+      </div>
+
+      {!compact && (
+        <span className="project-path" role="cell" title={project.root_path}>
+          {shortPath(project.root_path, 34)}
         </span>
       )}
 
-      {hasChildren && onToggleExpand && (
-        <button
-          type="button"
-          className="project-expand-btn"
-          title={
-            expanded ? t("projects.collapseChildren") : t("projects.expandChildren")
-          }
-          aria-label={
-            expanded ? t("projects.collapseChildren") : t("projects.expandChildren")
-          }
-          aria-expanded={expanded}
-          onClick={handleAction(onToggleExpand)}
-        >
-          {expanded ? "▾" : "▸"}
-        </button>
-      )}
-
-      <Link
-        to={`/projects/${project.id}`}
-        className="project-card-link"
-        onClick={() => onNavigate(project)}
-      >
-        <div className="project-card-header">
-          <div className="project-card-icon">{icon}</div>
-          <div className="project-card-badges">
-            {project.group_name && (
-              <span className="project-group-badge">{project.group_name}</span>
-            )}
-            {hasChildren && (
-              <span className="project-child-count">
-                {t("projects.childCount", { count: project.child_count })}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <h3 className="project-card-name">{project.name}</h3>
-
-        {!compact && (
-          <div className="project-card-meta">
-            <span className="project-meta-chip">
-              {t(`enums.language.${project.language}`)}
-            </span>
-            <span className="project-meta-chip project-meta-status">
-              <span className="status-dot" style={{ background: statusColor }} />
-              {t(`enums.status.${project.status}`)}
-            </span>
-            <span className="project-meta-chip muted">
-              {t(`enums.projectType.${project.project_type}`)}
-            </span>
-          </div>
-        )}
-
-        {project.last_modified_at && !compact && (
-          <p className="project-card-modified">
-            {t("projects.lastModified")}: {formatDate(project.last_modified_at, locale)}
-          </p>
-        )}
-
-        {!compact && (
-          <p className="project-card-path muted">{shortPath(project.root_path)}</p>
-        )}
-      </Link>
+      <span role="cell">{lang}</span>
 
       {!compact && (
-        <footer className="project-card-footer">
+        <span
+          className="project-modified"
+          role="cell"
+          title={project.last_modified_at ?? undefined}
+        >
+          {project.last_modified_at ? formatRelative(project.last_modified_at, locale) : "—"}
+        </span>
+      )}
+
+      {!compact && (
+        <span className="project-folder" role="cell">
           {folders.length > 0 && (
-            <div
-              className="project-folder-picker"
-              onClick={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              <span className="project-folder-picker-icon">🗂️</span>
+            <>
               <label className="sr-only" htmlFor={`folder-${project.id}`}>
                 {t("folders.assign")}
               </label>
               <select
                 id={`folder-${project.id}`}
-                className="project-folder-select"
+                className={project.folder_id ? undefined : "unassigned"}
                 value={String(project.folder_id ?? "")}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  void assignToFolder(project.id, e.target.value || null);
-                }}
+                title={t("folders.assign")}
+                onChange={(e) => void assignToFolder(project.id, e.target.value || null)}
               >
                 <option value="">{t("folders.unassigned")}</option>
                 {folders.map((f) => (
@@ -152,70 +143,49 @@ export function ProjectCard({
                   </option>
                 ))}
               </select>
-            </div>
+            </>
           )}
-
-          <div className="project-card-actions">
-            <button
-              type="button"
-              className="icon-btn accent"
-              title={t("projects.openInEditor")}
-              aria-label={t("projects.openInEditor")}
-              onClick={handleAction(onOpenEditor)}
-            >
-              ⌘
-            </button>
-            <button
-              type="button"
-              className="icon-btn"
-              title={t("projects.openFolder")}
-              aria-label={t("projects.openProject", { name: project.name })}
-              onClick={handleAction(onOpenFolder)}
-            >
-              📂
-            </button>
-            <button
-              type="button"
-              className="icon-btn"
-              title={
-                project.status === "archived"
-                  ? t("projects.unarchive")
-                  : t("projects.archive")
-              }
-              aria-label={
-                project.status === "archived"
-                  ? t("projects.unarchive")
-                  : t("projects.archive")
-              }
-              onClick={handleAction(onArchive)}
-            >
-              📦
-            </button>
-            <button
-              type="button"
-              className="icon-btn danger"
-              title={t("projects.removeFromHub")}
-              aria-label={t("common.remove")}
-              onClick={handleAction(onRemove)}
-            >
-              ✕
-            </button>
-          </div>
-        </footer>
+        </span>
       )}
-    </article>
+
+      <div className="project-actions" role="cell">
+        <button
+          type="button"
+          className="icon-btn"
+          title={t("projects.openInEditor")}
+          aria-label={t("projects.openInEditor")}
+          onClick={handleAction(onOpenEditor)}
+        >
+          <Icon name="code" size={15} />
+        </button>
+        <button
+          type="button"
+          className="icon-btn"
+          title={t("projects.openFolder")}
+          aria-label={t("projects.openProject", { name: project.name })}
+          onClick={handleAction(onOpenFolder)}
+        >
+          <Icon name="external" size={15} />
+        </button>
+        <button
+          type="button"
+          className="icon-btn"
+          title={archiveLabel}
+          aria-label={archiveLabel}
+          onClick={handleAction(onArchive)}
+        >
+          <Icon name="archive" size={15} />
+        </button>
+        <button
+          type="button"
+          className="icon-btn danger"
+          title={t("projects.removeFromHub")}
+          aria-label={t("common.remove")}
+          onClick={handleAction(onRemove)}
+        >
+          <Icon name="trash" size={15} />
+        </button>
+      </div>
+    </div>
   );
-}
-
-function formatDate(iso: string, locale: string): string {
-  return new Date(iso).toLocaleDateString(locale, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function shortPath(path: string): string {
-  const home = path.replace(/^\/Users\/[^/]+/, "~");
-  return home.length > 48 ? `…${home.slice(-45)}` : home;
 }

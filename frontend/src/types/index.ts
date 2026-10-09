@@ -118,14 +118,31 @@ export interface ProjectRoot {
   created_at: string;
 }
 
+export const TASK_STATUSES = ["todo", "in_progress", "done", "cancelled"] as const;
+export const TASK_PRIORITIES = ["low", "medium", "high", "critical"] as const;
+
+export const RECURRENCE_FREQUENCIES = ["daily", "weekly", "monthly", "quarterly", "yearly"] as const;
+export type RecurrenceFrequency = (typeof RECURRENCE_FREQUENCIES)[number];
+
+export interface Recurrence {
+  frequency: RecurrenceFrequency;
+  interval: number;
+  /** First occurrence's due date; later occurrences are computed from it. */
+  start: string;
+  until: string | null;
+}
+
 export interface Task {
   id: string;
-  project_id: string;
+  /** `null` for personal tasks. */
+  project_id: string | null;
   title: string;
   description: string | null;
-  status: "todo" | "in_progress" | "done" | "cancelled";
-  priority: "low" | "medium" | "high" | "critical";
+  status: (typeof TASK_STATUSES)[number];
+  priority: (typeof TASK_PRIORITIES)[number];
   due_at: string | null;
+  recurrence: Recurrence | null;
+  series_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -187,3 +204,80 @@ export const STATUS_COLORS: Record<ProjectStatus, string> = {
   paused: "#eab308",
   archived: "#6b7280",
 };
+
+// ─── .brdd (per-project analysis folder) ─────────────────────────────────────
+
+export interface BrddVersionSnapshot {
+  n: number;
+  at: string;
+  version: string | null;
+  branch: string | null;
+  commit: string | null;
+  commit_short: string | null;
+  tags: string[];
+  dirty: boolean;
+  reason: "initial" | "version" | "commits" | "manual" | string;
+  files: number;
+  loc: number;
+  commits: GitCommitInfo[];
+  diff?: { files_changed: number; insertions: number; deletions: number } | null;
+}
+
+export interface BrddAnalysis {
+  format: number;
+  analyzed_at: string;
+  description: string | null;
+  version: string | null;
+  version_source: string | null;
+  manifests: string[];
+  stack: string[];
+  dependencies: { name: string; version?: string | null; kind: string; source: string }[];
+  structure: {
+    files: number;
+    source_files: number;
+    loc: number;
+    languages: { language: string; files: number; loc: number }[];
+    has_tests: boolean;
+    has_docker: boolean;
+    ci: string[];
+    truncated: boolean;
+  };
+  tasks: { total: number; todo: number; in_progress: number; done: number; cancelled: number };
+}
+
+export interface BrddBundle {
+  exists: boolean;
+  dir: string;
+  analysis: BrddAnalysis | null;
+  versions: BrddVersionSnapshot[];
+  summary_md: string | null;
+  changelog_md: string | null;
+  notes_md: string | null;
+}
+
+export interface BrddReport {
+  dir: string;
+  analysis: BrddAnalysis;
+  snapshot: BrddVersionSnapshot | null;
+  snapshots: number;
+  files_written: string[];
+}
+
+export interface BrddSettings {
+  auto_on_scan: boolean;
+  exclude_from_git: boolean;
+}
+
+export interface BrddRefreshAll {
+  refreshed: number;
+  failed: number;
+  items: { project_id: string; name: string; ok: boolean; error?: string | null; snapshot?: number | null }[];
+}
+
+export interface IssueSyncReport {
+  checked: number;
+  tasks_completed: number;
+  tasks_reopened: number;
+  issues_closed: number;
+  errors: string[];
+}

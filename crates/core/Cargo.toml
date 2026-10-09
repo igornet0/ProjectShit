@@ -1,0 +1,31 @@
+[package]
+name = "project-hub-core"
+description = "Project Hub application services (desktop shell + HTTP server)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+project-hub-domain = { workspace = true }
+project-hub-discovery = { workspace = true }
+project-hub-git = { workspace = true }
+project-hub-database = { workspace = true }
+project-hub-executor = { workspace = true }
+project-hub-github = { workspace = true }
+project-hub-brdd = { workspace = true }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+tokio = { workspace = true }
+open = "5"
+rayon = "1"
+walkdir = "2"
+
+[dev-dependencies]
+tempfile = "3"

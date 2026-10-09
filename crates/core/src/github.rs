@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use tokio::process::Command;
 use tracing::info;
 
-use crate::services::{AppState, ProjectService, ServiceError};
+use crate::{AppState, ProjectService, ServiceError};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GitHubConfigResponse {
@@ -52,7 +52,7 @@ impl GitHubService {
         })
     }
 
-    pub async fn oauth_start(state: &mut AppState) -> Result<GitHubOAuthStartResponse, ServiceError> {
+    pub async fn oauth_start(state: &AppState) -> Result<GitHubOAuthStartResponse, ServiceError> {
         let client_id = Self::oauth_client_id()?;
         let session = start_device_flow(&client_id).await?;
         let user_code = session.user_code.clone();
@@ -61,7 +61,7 @@ impl GitHubService {
         open::that(verification_url(&session))
             .map_err(|e| ServiceError::InvalidPath(e.to_string()))?;
 
-        state.oauth_session = Some(PendingOAuthSession {
+        *state.oauth_session.lock().unwrap() = Some(PendingOAuthSession {
             client_id,
             session,
         });
@@ -73,11 +73,15 @@ impl GitHubService {
     }
 
     pub async fn oauth_complete(
-        state: &mut AppState,
+        state: &AppState,
         default_clone_dir: Option<String>,
     ) -> Result<GitHubConfigResponse, ServiceError> {
+        // Take the session and release the lock before polling: the user may
+        // spend minutes in the browser.
         let pending = state
             .oauth_session
+            .lock()
+            .unwrap()
             .take()
             .ok_or_else(|| ServiceError::InvalidPath("no pending GitHub authorization".into()))?;
 
@@ -86,7 +90,10 @@ impl GitHubService {
     }
 
     fn oauth_client_id() -> Result<String, ServiceError> {
-        const BUILT_IN: &str = env!("PROJECT_HUB_GITHUB_OAUTH_CLIENT_ID");
+        const BUILT_IN: &str = match option_env!("PROJECT_HUB_GITHUB_OAUTH_CLIENT_ID") {
+            Some(id) => id,
+            None => "",
+        };
         if !BUILT_IN.is_empty() {
             return Ok(BUILT_IN.to_string());
         }
@@ -151,9 +158,7 @@ impl GitHubService {
         let repos = client.list_repos().await?;
         GitHubRepoRepository::replace_all(state.db.pool(), &repos).await?;
 
-        for project in ProjectRepository::list(state.db.pool()).await? {
-            let _ = super::link_project_github_remote(state, &project).await;
-        }
+        crate::link_all_github_remotes(state).await?;
 
         info!(count = repos.len(), "github repos synced");
         Ok(repos)

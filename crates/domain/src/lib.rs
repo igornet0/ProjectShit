@@ -7,6 +7,7 @@ pub mod github;
 pub mod hierarchy;
 pub mod project;
 pub mod task;
+pub mod task_link;
 
 pub use activity::{Activity, ActivityId, ActivityType};
 pub use calendar::{CalendarEvent, CalendarEventId};
@@ -19,4 +20,5 @@ pub use project::{
     Language, Project, ProjectId, ProjectInfo, ProjectListItem, ProjectRoot, ProjectRootId,
     ProjectStatus, ProjectType,
 };
-pub use task::{Task, TaskId, TaskPriority, TaskStatus};
+pub use task::{Recurrence, RecurrenceFrequency, Task, TaskId, TaskPriority, TaskStatus};
+pub use task_link::TaskLink;

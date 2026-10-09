@@ -48,19 +48,19 @@ impl ProjectScanner {
 
         info!(path = %root.display(), "starting project scan");
 
+        // Prune skipped directories up front so WalkDir never descends into
+        // node_modules/target/etc.
         for entry in WalkDir::new(root)
             .follow_links(false)
             .max_depth(self.max_depth)
             .into_iter()
+            .filter_entry(|e| e.depth() == 0 || !is_skipped_dir(e))
             .filter_map(|e| e.ok())
         {
+            if !entry.file_type().is_dir() {
+                continue;
+            }
             let path = entry.path();
-            if !path.is_dir() {
-                continue;
-            }
-            if should_skip(path) {
-                continue;
-            }
 
             if let Some(info) = self.detect_at(path) {
                 let canonical = info.root_path.clone();
@@ -87,12 +87,12 @@ impl ProjectScanner {
     }
 }
 
-fn should_skip(path: &Path) -> bool {
-    path.components().any(|c| {
-        c.as_os_str()
+fn is_skipped_dir(entry: &walkdir::DirEntry) -> bool {
+    entry.file_type().is_dir()
+        && entry
+            .file_name()
             .to_str()
             .is_some_and(|s| SKIP_DIRS.contains(&s))
-    })
 }
 
 #[cfg(test)]

@@ -17,6 +17,8 @@ project-hub-database = { workspace = true }
 project-hub-executor = { workspace = true }
 project-hub-watcher = { workspace = true }
 project-hub-github = { workspace = true }
+project-hub-core = { workspace = true }
+project-hub-brdd = { workspace = true }
 
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
@@ -32,6 +34,7 @@ chrono = { workspace = true }
 uuid = { workspace = true }
 open = "5"
 tokio = { workspace = true }
+rayon = "1"
 
 [[bin]]
 name = "project-hub"

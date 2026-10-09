@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::repository::{GitError, GitRepository};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GitStatus {
     pub branch: String,
     pub modified: usize,
@@ -14,7 +14,7 @@ pub struct GitStatus {
     pub behind: usize,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GitCommitInfo {
     pub hash: String,
     pub message: String,
@@ -36,6 +36,26 @@ impl GitRepository {
             ahead,
             behind,
         })
+    }
+
+    /// Cheap dirty check for list views: no untracked-dir recursion, no
+    /// submodules, no ahead/behind graph walk.
+    pub fn is_dirty_fast(&self) -> Result<bool, GitError> {
+        let mut opts = StatusOptions::new();
+        opts.include_untracked(true)
+            .recurse_untracked_dirs(false)
+            .exclude_submodules(true)
+            .include_ignored(false);
+
+        let statuses = self.repo().statuses(Some(&mut opts))?;
+        Ok(!statuses.is_empty())
+    }
+
+    pub fn origin_url(&self) -> Option<String> {
+        self.repo()
+            .find_remote("origin")
+            .ok()
+            .and_then(|r| r.url().map(String::from))
     }
 
     pub fn last_commit(&self) -> Result<Option<GitCommitInfo>, GitError> {
@@ -138,7 +158,7 @@ impl GitRepository {
     }
 }
 
-fn commit_to_info(commit: &git2::Commit) -> GitCommitInfo {
+pub(crate) fn commit_to_info(commit: &git2::Commit) -> GitCommitInfo {
     let time = commit.time();
     let date = DateTime::from_timestamp(time.seconds(), 0).unwrap_or_else(Utc::now);
 

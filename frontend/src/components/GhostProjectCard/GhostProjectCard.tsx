@@ -1,4 +1,5 @@
 import type { HubProjectEntry } from "@/types";
+import { Icon } from "@/components/Icon/Icon";
 import { useTranslation } from "@/i18n";
 
 interface GhostProjectCardProps {
@@ -7,35 +8,34 @@ interface GhostProjectCardProps {
   cloning?: boolean;
 }
 
-export function GhostProjectCard({
-  entry,
-  onClone,
-  cloning,
-}: GhostProjectCardProps) {
+/** A GitHub repository that is not cloned locally, rendered as a table row. */
+export function GhostProjectCard({ entry, onClone, cloning }: GhostProjectCardProps) {
   const { t } = useTranslation();
   const { github_repo: repo } = entry;
 
   return (
-    <article className="project-card ghost">
-      <div className="project-card-link">
-        <div className="project-card-icon">👻</div>
-        <h3 className="project-card-name">{repo.full_name.toUpperCase()}</h3>
-        <span className="ghost-badge">{t("projects.ghost")}</span>
-        {repo.description && (
-          <p className="project-card-language muted">{repo.description}</p>
-        )}
-        <p className="project-card-path muted">{repo.clone_url}</p>
+    <div className="project-row ghost" role="row">
+      <div className="project-name-cell" role="cell">
+        <Icon name="github" size={15} />
+        <span className="project-name" title={repo.clone_url}>
+          {repo.full_name}
+        </span>
+        <span className="badge outline">{t("projects.ghost")}</span>
       </div>
-      <div className="project-card-actions">
+      <span className="project-path" role="cell" title={repo.description ?? repo.clone_url}>
+        {repo.description ?? repo.clone_url}
+      </span>
+      <div className="project-actions" role="cell">
         <button
           type="button"
-          className="btn primary"
+          className="btn small"
           disabled={cloning}
           onClick={() => onClone(entry)}
         >
-          ⬇ {t("projects.install")}
+          <Icon name={cloning ? "refresh" : "download"} size={13} />
+          {t("projects.install")}
         </button>
       </div>
-    </article>
+    </div>
   );
 }

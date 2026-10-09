@@ -5,7 +5,8 @@
     "tasks": "任务",
     "calendar": "日历",
     "settings": "设置",
-    "commandHint": "按 {{shortcut}} 打开命令面板"
+    "commandHint": "按 {{shortcut}} 打开命令面板",
+    "search": "搜索"
   },
   "common": {
     "loading": "加载中…",
@@ -16,7 +17,8 @@
     "viewAll": "查看全部 →",
     "backToProjects": "← 项目",
     "notFound": "未找到",
-    "shortcut": "⌘K"
+    "shortcut": "⌘K",
+    "save": "保存"
   },
   "greeting": {
     "morning": "早上好",
@@ -33,7 +35,7 @@
   "projects": {
     "title": "Project Hub",
     "subtitle": "本地优先的项目画廊",
-    "addProject": "+ 添加项目",
+    "addProject": "添加项目",
     "searchPlaceholder": "搜索项目…",
     "selectDirectory": "选择项目目录",
     "emptyTitle": "暂无项目",
@@ -62,7 +64,11 @@
     "ghost": "Not installed",
     "install": "Install",
     "ghostSection": "GitHub — not on this machine",
-    "ghostHint": "These repos are on your GitHub but not cloned locally yet."
+    "ghostHint": "These repos are on your GitHub but not cloned locally yet.",
+    "columns": {
+      "name": "名称",
+      "path": "路径"
+    }
   },
   "projectDetail": {
     "loading": "加载项目中…",
@@ -86,7 +92,28 @@
     "title": "任务",
     "newPlaceholder": "新任务…",
     "loading": "加载任务中…",
-    "empty": "暂无任务。"
+    "empty": "暂无任务。",
+    "priority": "优先级",
+    "status": "状态",
+    "dueDate": "截止日期",
+    "personal": "个人",
+    "allStatuses": "所有状态",
+    "allPriorities": "所有优先级",
+    "openOnly": "未完成",
+    "repeat": "重复",
+    "repeatNone": "不重复",
+    "repeatEvery": "每",
+    "repeatUntil": "截止",
+    "repeatNoEnd": "无结束日期",
+    "repeatProjected": "即将重复",
+    "repeatEveryN": "每 {{count}} {{unit}}",
+    "project": "项目",
+    "description": "描述",
+    "openProject": "打开项目",
+    "delete": "删除任务",
+    "deleteConfirm": "删除任务“{{title}}”？",
+    "stopRepeat": "停止重复",
+    "descriptionPlaceholder": "添加详情…"
   },
   "calendar": {
     "title": "日历",
@@ -99,20 +126,29 @@
       "fri": "五",
       "sat": "六",
       "sun": "日"
-    }
+    },
+    "showEvents": "事件",
+    "today": "今天",
+    "prevMonth": "上个月",
+    "nextMonth": "下个月"
   },
   "settings": {
     "title": "设置",
+    "subtitle": "语言、编辑器、GitHub 同步与扫描目录",
     "language": "语言",
     "languageHint": "选择界面语言，立即生效。",
     "projectRoots": "项目根目录",
     "projectRootsHint": "扫描项目的目录。请在项目页面添加。",
     "noRoots": "未配置项目根目录。",
+    "rootsCount": "{{count}} 个目录",
+    "goToProjects": "在「项目」页面管理",
     "about": "关于",
     "aboutText": "Project Hub v0.1 — 本地优先的开发者工作区",
     "editors": "IDE / Editor",
     "editorsHint": "Choose the default editor for opening projects. Use {path} in custom command args.",
     "defaultEditor": "Default editor",
+    "defaultBadge": "Default",
+    "installedEditors": "Installed editors",
     "customEditors": "Custom editors",
     "addCustomEditor": "Add custom editor",
     "editorId": "ID",
@@ -138,13 +174,22 @@
     "githubOAuthClientIdPlaceholder": "Or set GITHUB_OAUTH_CLIENT_ID env var",
     "githubCreateOAuthApp": "Create OAuth App",
     "githubAdvanced": "Advanced",
-    "githubRepoStats": "{{local}} local · {{remote}} on GitHub"
+    "githubRepoStats": "{{local}} local · {{remote}} on GitHub",
+    "githubLocal": "Local repos",
+    "githubRemote": "Not cloned",
+    "brdd": ".brdd & automation",
+    "brddHint": "Per-project analysis folder, version tracking and GitHub issue sync."
   },
   "commandPalette": {
     "placeholder": "搜索项目、操作…",
     "openProject": "打开 {{name}}",
     "searchProjects": "搜索项目",
-    "createTask": "创建任务"
+    "createTask": "创建任务",
+    "actions": "操作",
+    "navigate": "导航",
+    "select": "打开",
+    "close": "关闭",
+    "empty": "无结果"
   },
   "git": {
     "loading": "加载 Git 状态…",
@@ -182,6 +227,32 @@
       "web": "Web",
       "embedded": "嵌入式",
       "unknown": "未知"
+    },
+    "taskStatus": {
+      "todo": "待办",
+      "in_progress": "进行中",
+      "done": "已完成",
+      "cancelled": "已取消"
+    },
+    "taskPriority": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "critical": "紧急"
+    },
+    "recurrence": {
+      "daily": "每天",
+      "weekly": "每周",
+      "monthly": "每月",
+      "quarterly": "每季度",
+      "yearly": "每年"
+    },
+    "recurrenceUnit": {
+      "daily": "天",
+      "weekly": "周",
+      "monthly": "月",
+      "quarterly": "季度",
+      "yearly": "年"
     }
   },
   "folders": {
@@ -195,5 +266,38 @@
     "views": "Views",
     "myFolders": "My folders",
     "dragHint": "Drag to reorder"
+  },
+  "brdd": {
+    "snapshots": "{{count}} snapshots",
+    "refresh": "Refresh",
+    "create": "Create .brdd",
+    "snapshot": "Snapshot",
+    "snapshotHint": "Record a version snapshot even if nothing changed",
+    "empty": "No .brdd folder yet. It holds a short analysis of the project, version snapshots and a changelog — create it to start tracking.",
+    "size": "{{files}} files · {{loc}} LOC",
+    "tasks": "tasks {{done}}/{{total}}",
+    "analyzed": "analyzed {{when}}",
+    "lastSnapshot": "snapshot #{{n}} ({{reason}})",
+    "reason": {
+      "initial": "first",
+      "version": "version changed",
+      "commits": "new commits",
+      "manual": "manual"
+    },
+    "tab": {
+      "summary": "Summary",
+      "changes": "Changes",
+      "notes": "AI notes"
+    },
+    "notesPlaceholder": "Notes about the project — written by you or by an AI agent (BoardDo). Kept across refreshes.",
+    "notesHint": "Saved to .brdd/ai-summary.md",
+    "autoOnScan": "Maintain .brdd automatically",
+    "autoOnScanHint": "Refresh the folder of every project found or refreshed by a scan.",
+    "excludeFromGit": "Keep .brdd out of git",
+    "excludeFromGitHint": "Adds /.brdd/ to .git/info/exclude (local only) so the repository stays clean.",
+    "refreshAll": "Refresh .brdd for all projects",
+    "refreshAllDone": "Refreshed: {{ok}}, failed: {{failed}}",
+    "syncIssues": "Sync GitHub issues",
+    "issuesSynced": "Checked {{checked}} linked issues · tasks done: {{done}} · issues closed: {{closed}}"
   }
 }

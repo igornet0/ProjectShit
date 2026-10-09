@@ -63,7 +63,10 @@ impl ProjectRepository {
         row.map(|r| r.into_project()).transpose()
     }
 
-    pub async fn upsert(pool: &SqlitePool, project: &Project) -> Result<(), DbError> {
+    pub async fn upsert<'e, E>(executor: E, project: &Project) -> Result<(), DbError>
+    where
+        E: sqlx::Executor<'e, Database = sqlx::Sqlite>,
+    {
         sqlx::query(
             r#"
             INSERT INTO projects (id, name, root_path, language, project_type, status, description, icon, group_name, github_repo_id, remote_url, last_opened_at, last_modified_at, created_at, updated_at)
@@ -95,13 +98,16 @@ impl ProjectRepository {
         .bind(project.last_modified_at.map(|d| d.to_rfc3339()))
         .bind(project.created_at.to_rfc3339())
         .bind(project.updated_at.to_rfc3339())
-        .execute(pool)
+        .execute(executor)
         .await?;
 
         Ok(())
     }
 
-    pub async fn update_metadata(pool: &SqlitePool, project: &Project) -> Result<(), DbError> {
+    pub async fn update_metadata<'e, E>(executor: E, project: &Project) -> Result<(), DbError>
+    where
+        E: sqlx::Executor<'e, Database = sqlx::Sqlite>,
+    {
         let result = sqlx::query(
             r#"
             UPDATE projects SET
@@ -125,7 +131,7 @@ impl ProjectRepository {
         .bind(project.last_modified_at.map(|d| d.to_rfc3339()))
         .bind(project.updated_at.to_rfc3339())
         .bind(project.id.to_string())
-        .execute(pool)
+        .execute(executor)
         .await?;
 
         if result.rows_affected() == 0 {

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use crate::{ProjectId, ProjectListItem};
@@ -31,29 +32,25 @@ pub fn enrich_with_hierarchy(items: &mut [ProjectListItem]) {
     }
 
     let ids: Vec<ProjectId> = items.iter().map(|item| item.project.id).collect();
-    let paths: Vec<PathBuf> = items
+    // Root paths are normalized when stored, so no canonicalize() here.
+    let index_by_path: HashMap<&Path, usize> = items
         .iter()
-        .map(|item| normalize_path(&item.project.root_path))
+        .enumerate()
+        .map(|(i, item)| (item.project.root_path.as_path(), i))
         .collect();
 
-    let mut parent_idx: Vec<Option<usize>> = vec![None; n];
-
-    for (i, child_path) in paths.iter().enumerate() {
-        let mut best_parent: Option<(usize, usize)> = None;
-
-        for (j, parent_path) in paths.iter().enumerate() {
-            if i == j || !is_strict_child(parent_path, child_path) {
-                continue;
-            }
-
-            let depth = parent_path.components().count();
-            if best_parent.map(|(_, d)| depth > d).unwrap_or(true) {
-                best_parent = Some((j, depth));
-            }
-        }
-
-        parent_idx[i] = best_parent.map(|(j, _)| j);
-    }
+    // Nearest registered ancestor is the immediate parent: O(n * depth)
+    // instead of comparing every pair of paths.
+    let parent_idx: Vec<Option<usize>> = items
+        .iter()
+        .map(|item| {
+            item.project
+                .root_path
+                .ancestors()
+                .skip(1)
+                .find_map(|ancestor| index_by_path.get(ancestor).copied())
+        })
+        .collect();
 
     let mut child_counts = vec![0u32; n];
     for parent in &parent_idx {

@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
 import { useGitHubStore } from "@/stores";
+import { Icon } from "@/components/Icon/Icon";
 import { useTranslation } from "@/i18n";
 
-export function GitHubSettings() {
+type GitHubSettingsProps = {
+  compact?: boolean;
+};
+
+export function GitHubSettings({ compact = false }: GitHubSettingsProps) {
   const { t } = useTranslation();
   const {
     config,
@@ -59,16 +64,18 @@ export function GitHubSettings() {
   }
 
   return (
-    <div className="github-settings">
+    <div className={`github-settings${compact ? " github-settings--compact" : ""}`}>
       {config?.connected ? (
-        <div className="github-connected-card">
-          <div className="github-connected-header">
-            <span className="github-avatar">🐙</span>
+        <>
+          <div className="github-account">
+            <span className="avatar">
+              <Icon name="github" size={18} />
+            </span>
             <div>
-              <p className="github-connected-title">
+              <p className="list-row-title">
                 {t("settings.githubConnectedAs", { user: config.username ?? "?" })}
               </p>
-              <p className="muted github-connected-meta">
+              <p className="faint">
                 {t("settings.githubRepoStats", {
                   local: localCount,
                   remote: localCount + ghostCount,
@@ -77,19 +84,31 @@ export function GitHubSettings() {
             </div>
           </div>
 
+          <div className="kv-grid">
+            <div className="kv">
+              <span className="kv-value">{localCount}</span>
+              <span className="kv-label">{t("settings.githubLocal")}</span>
+            </div>
+            <div className="kv">
+              <span className="kv-value">{ghostCount}</span>
+              <span className="kv-label">{t("settings.githubRemote")}</span>
+            </div>
+          </div>
+
           {config.default_clone_dir && (
-            <p className="muted github-clone-dir">
+            <p className="github-clone-dir">
               {t("settings.githubCloneDir")}: <code>{config.default_clone_dir}</code>
             </p>
           )}
 
-          <div className="github-actions">
+          <div className="button-row">
             <button
               type="button"
-              className="btn"
+              className="btn primary"
               disabled={loading}
               onClick={() => syncRepos()}
             >
+              <Icon name="refresh" size={14} />
               {t("settings.githubSync")}
             </button>
             <button
@@ -101,61 +120,57 @@ export function GitHubSettings() {
               {t("settings.githubDisconnect")}
             </button>
           </div>
-        </div>
+        </>
       ) : (
-        <div className="github-connect-card">
-          <div className="github-connect-intro">
-            <span className="github-logo">🐙</span>
-            <div>
-              <h3>{t("settings.githubSignInTitle")}</h3>
-              <p className="muted">{t("settings.githubHint")}</p>
+        <>
+          {!compact && (
+            <div className="github-account" style={{ marginBottom: 14 }}>
+              <span className="avatar">
+                <Icon name="github" size={18} />
+              </span>
+              <div>
+                <p className="list-row-title">{t("settings.githubSignInTitle")}</p>
+                <p className="faint">{t("settings.githubHint")}</p>
+              </div>
             </div>
-          </div>
+          )}
 
           <button
             type="button"
-            className="github-sign-in-btn"
+            className="btn primary"
             disabled={authenticating || loading}
             onClick={handleOAuthLogin}
           >
-            <svg viewBox="0 0 16 16" aria-hidden="true" className="github-mark">
-              <path
-                fill="currentColor"
-                d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.19 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"
-              />
-            </svg>
-            {authenticating
-              ? t("settings.githubOAuthWaiting")
-              : t("settings.githubSignIn")}
+            <Icon name="github" size={14} />
+            {authenticating ? t("settings.githubOAuthWaiting") : t("settings.githubSignIn")}
           </button>
 
           {authenticating && oauthUserCode && (
-            <div className="github-oauth-code-card">
-              <p className="github-oauth-code-label">{t("settings.githubOAuthCodeLabel")}</p>
-              <div className="github-oauth-code-row">
-                <code className="github-oauth-code">{oauthUserCode}</code>
-                <button
-                  type="button"
-                  className="btn github-oauth-copy-btn"
-                  onClick={handleCopyCode}
-                >
+            <div className="oauth-code">
+              <p className="field-label">{t("settings.githubOAuthCodeLabel")}</p>
+              <div className="oauth-code-row">
+                <code>{oauthUserCode}</code>
+                <button type="button" className="btn small" onClick={handleCopyCode}>
+                  <Icon name={copied ? "check" : "copy"} size={12} />
                   {copied ? t("settings.githubOAuthCodeCopied") : t("settings.githubOAuthCodeCopy")}
                 </button>
               </div>
-              <p className="github-oauth-waiting muted">{t("settings.githubOAuthBrowserHint")}</p>
+              <p className="faint">{t("settings.githubOAuthBrowserHint")}</p>
             </div>
           )}
 
           {authenticating && !oauthUserCode && (
-            <p className="github-oauth-waiting muted">{t("settings.githubOAuthWaiting")}</p>
+            <p className="faint" style={{ marginTop: 10 }}>
+              {t("settings.githubOAuthWaiting")}
+            </p>
           )}
 
           {authMessage && (
-            <div className="github-error" role="alert">
+            <div className="inline-alert" role="alert">
               {authMessage}
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );

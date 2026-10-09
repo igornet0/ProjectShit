@@ -5,7 +5,8 @@
     "tasks": "Задачи",
     "calendar": "Календарь",
     "settings": "Настройки",
-    "commandHint": "Нажмите {{shortcut}} для командной палитры"
+    "commandHint": "Нажмите {{shortcut}} для командной палитры",
+    "search": "Поиск"
   },
   "common": {
     "loading": "Загрузка…",
@@ -16,7 +17,8 @@
     "viewAll": "Все →",
     "backToProjects": "← Проекты",
     "notFound": "Не найдено",
-    "shortcut": "⌘K"
+    "shortcut": "⌘K",
+    "save": "Сохранить"
   },
   "greeting": {
     "morning": "Доброе утро",
@@ -33,7 +35,7 @@
   "projects": {
     "title": "Project Hub",
     "subtitle": "Локальная галерея проектов",
-    "addProject": "+ Добавить проект",
+    "addProject": "Добавить проект",
     "searchPlaceholder": "Поиск проектов…",
     "selectDirectory": "Выберите папку проекта",
     "emptyTitle": "Проектов пока нет",
@@ -62,7 +64,11 @@
     "ghost": "Не установлен",
     "install": "Установить",
     "ghostSection": "GitHub — нет локально",
-    "ghostHint": "Эти репозитории есть на GitHub, но ещё не склонированы."
+    "ghostHint": "Эти репозитории есть на GitHub, но ещё не склонированы.",
+    "columns": {
+      "name": "Название",
+      "path": "Путь"
+    }
   },
   "folders": {
     "title": "Папки",
@@ -98,7 +104,28 @@
     "title": "Задачи",
     "newPlaceholder": "Новая задача…",
     "loading": "Загрузка задач…",
-    "empty": "Задач пока нет."
+    "empty": "Задач пока нет.",
+    "priority": "Приоритет",
+    "status": "Статус",
+    "dueDate": "Дедлайн",
+    "personal": "Личная",
+    "allStatuses": "Все статусы",
+    "allPriorities": "Все приоритеты",
+    "openOnly": "Открытые",
+    "repeat": "Повтор",
+    "repeatNone": "Не повторять",
+    "repeatEvery": "Каждые",
+    "repeatUntil": "До",
+    "repeatNoEnd": "Без даты окончания",
+    "repeatProjected": "Будущий повтор",
+    "repeatEveryN": "каждые {{count}} {{unit}}",
+    "project": "Проект",
+    "description": "Описание",
+    "openProject": "Открыть проект",
+    "delete": "Удалить задачу",
+    "deleteConfirm": "Удалить задачу «{{title}}»?",
+    "stopRepeat": "Остановить повтор",
+    "descriptionPlaceholder": "Добавьте подробности…"
   },
   "calendar": {
     "title": "Календарь",
@@ -111,20 +138,29 @@
       "fri": "Пт",
       "sat": "Сб",
       "sun": "Вс"
-    }
+    },
+    "showEvents": "События",
+    "today": "Сегодня",
+    "prevMonth": "Предыдущий месяц",
+    "nextMonth": "Следующий месяц"
   },
   "settings": {
     "title": "Настройки",
+    "subtitle": "Язык, редакторы, GitHub и директории для сканирования",
     "language": "Язык",
     "languageHint": "Выберите язык интерфейса. Применяется сразу.",
     "projectRoots": "Корни проектов",
     "projectRootsHint": "Директории для сканирования. Добавляйте на странице Проекты.",
     "noRoots": "Корни проектов не настроены.",
+    "rootsCount": "{{count}} директорий",
+    "goToProjects": "Управлять на странице «Проекты»",
     "about": "О приложении",
     "aboutText": "Project Hub v0.1 — локальное рабочее пространство разработчика",
     "editors": "IDE / Редактор",
     "editorsHint": "Редактор по умолчанию для открытия проектов. В аргументах используйте {path}.",
     "defaultEditor": "Редактор по умолчанию",
+    "defaultBadge": "По умолчанию",
+    "installedEditors": "Установленные редакторы",
     "customEditors": "Свои редакторы",
     "addCustomEditor": "Добавить редактор",
     "editorId": "ID",
@@ -145,13 +181,22 @@
     "githubDisconnect": "Отключить",
     "githubSync": "Синхронизировать",
     "githubConnectedAs": "Подключён как {{user}}",
-    "githubRepoStats": "{{local}} локально · {{remote}} на GitHub"
+    "githubRepoStats": "{{local}} локально · {{remote}} на GitHub",
+    "githubLocal": "Локально",
+    "githubRemote": "Не склонированы",
+    "brdd": ".brdd и автоматизация",
+    "brddHint": "Папка анализа в каждом проекте, отслеживание версий и синхронизация GitHub issues."
   },
   "commandPalette": {
     "placeholder": "Поиск проектов и действий…",
     "openProject": "Открыть {{name}}",
     "searchProjects": "Поиск проектов",
-    "createTask": "Создать задачу"
+    "createTask": "Создать задачу",
+    "actions": "Действия",
+    "navigate": "навигация",
+    "select": "открыть",
+    "close": "закрыть",
+    "empty": "Ничего не найдено"
   },
   "git": {
     "loading": "Загрузка статуса git…",
@@ -189,6 +234,65 @@
       "web": "Web",
       "embedded": "Embedded",
       "unknown": "Неизвестно"
+    },
+    "taskStatus": {
+      "todo": "К выполнению",
+      "in_progress": "В работе",
+      "done": "Готово",
+      "cancelled": "Отменена"
+    },
+    "taskPriority": {
+      "low": "Низкий",
+      "medium": "Средний",
+      "high": "Высокий",
+      "critical": "Критический"
+    },
+    "recurrence": {
+      "daily": "Каждый день",
+      "weekly": "Каждую неделю",
+      "monthly": "Каждый месяц",
+      "quarterly": "Каждый квартал",
+      "yearly": "Каждый год"
+    },
+    "recurrenceUnit": {
+      "daily": "дн.",
+      "weekly": "нед.",
+      "monthly": "мес.",
+      "quarterly": "кв.",
+      "yearly": "г."
     }
+  },
+  "brdd": {
+    "snapshots": "снимков: {{count}}",
+    "refresh": "Обновить",
+    "create": "Создать .brdd",
+    "snapshot": "Снимок",
+    "snapshotHint": "Записать снимок версии, даже если ничего не изменилось",
+    "empty": "Папки .brdd пока нет. В ней хранится краткий анализ проекта, снимки версий и журнал изменений — создайте её, чтобы начать отслеживание.",
+    "size": "{{files}} файлов · {{loc}} строк кода",
+    "tasks": "задачи {{done}}/{{total}}",
+    "analyzed": "анализ {{when}}",
+    "lastSnapshot": "снимок №{{n}} ({{reason}})",
+    "reason": {
+      "initial": "первый",
+      "version": "новая версия",
+      "commits": "новые коммиты",
+      "manual": "вручную"
+    },
+    "tab": {
+      "summary": "Сводка",
+      "changes": "Изменения",
+      "notes": "Заметки ИИ"
+    },
+    "notesPlaceholder": "Заметки о проекте — ваши или ИИ-агента (BoardDo). Сохраняются при обновлении.",
+    "notesHint": "Сохраняется в .brdd/ai-summary.md",
+    "autoOnScan": "Вести .brdd автоматически",
+    "autoOnScanHint": "Обновлять папку у каждого проекта, найденного или обновлённого сканированием.",
+    "excludeFromGit": "Не добавлять .brdd в git",
+    "excludeFromGitHint": "Добавляет /.brdd/ в .git/info/exclude (только локально), чтобы репозиторий оставался чистым.",
+    "refreshAll": "Обновить .brdd во всех проектах",
+    "refreshAllDone": "Обновлено: {{ok}}, ошибок: {{failed}}",
+    "syncIssues": "Синхронизировать GitHub issues",
+    "issuesSynced": "Проверено связанных issues: {{checked}} · задач выполнено: {{done}} · issues закрыто: {{closed}}"
   }
 }

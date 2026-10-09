@@ -27,7 +27,8 @@ interface ProjectStore {
   showGithub: boolean;
   expandedProjectIds: string[];
 
-  fetchProjects: () => Promise<void>;
+  /** Reuses fresh data and in-flight requests unless `force` is set. */
+  fetchProjects: (force?: boolean) => Promise<void>;
   fetchGroups: () => Promise<void>;
   fetchRoots: () => Promise<void>;
   addRoot: (path: string) => Promise<void>;
@@ -54,6 +55,11 @@ interface ProjectStore {
   getChildProjects: (parentId: string) => ProjectListItem[];
 }
 
+const PROJECTS_STALE_MS = 10_000;
+let projectsRequest: Promise<void> | null = null;
+let projectsFetchedAt = 0;
+let projectsFetchedArchived = false;
+
 export const useProjectStore = create<ProjectStore>((set, get) => ({
   projects: [],
   groups: [],
@@ -68,15 +74,31 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   showGithub: false,
   expandedProjectIds: [],
 
-  fetchProjects: async () => {
-    set({ loading: true, error: null });
-    try {
-      const { showArchived } = get();
-      const projects = await api.projects.listSummaries(showArchived);
-      set({ projects, loading: false });
-    } catch (e) {
-      set({ error: String(e), loading: false });
-    }
+  fetchProjects: async (force = false) => {
+    const { showArchived, projects } = get();
+    const fresh =
+      projectsFetchedArchived === showArchived &&
+      Date.now() - projectsFetchedAt < PROJECTS_STALE_MS;
+    if (!force && fresh) return;
+    if (!force && projectsRequest) return projectsRequest;
+
+    // Only show the spinner on first load; later refreshes are silent.
+    set({ loading: projects.length === 0, error: null });
+    const request = (async () => {
+      try {
+        const items = await api.projects.listSummaries(showArchived);
+        projectsFetchedAt = Date.now();
+        projectsFetchedArchived = showArchived;
+        set({ projects: items, loading: false });
+      } catch (e) {
+        set({ error: String(e), loading: false });
+      }
+    })();
+    void request.finally(() => {
+      if (projectsRequest === request) projectsRequest = null;
+    });
+    projectsRequest = request;
+    return request;
   },
 
   fetchGroups: async () => {
@@ -101,8 +123,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       await api.projects.roots.add(path);
-      await get().fetchProjects();
-      await get().fetchGroups();
+      await Promise.all([get().fetchProjects(true), get().fetchGroups()]);
       set({ loading: false });
     } catch (e) {
       set({ error: String(e), loading: false });
@@ -230,7 +251,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   setShowArchived: (show: boolean) => {
     set({ showArchived: show });
-    get().fetchProjects();
+    get().fetchProjects(true);
   },
 
   toggleProjectExpanded: (id: string) => {
@@ -359,15 +380,13 @@ interface TaskStore {
   error: string | null;
 
   fetchTasks: () => Promise<void>;
-  createTask: (input: {
-    project_id: string;
-    title: string;
-    description?: string;
-  }) => Promise<void>;
+  createTask: (input: Parameters<typeof api.tasks.create>[0]) => Promise<void>;
   toggleTask: (task: Task) => Promise<void>;
+  updateTask: (input: Parameters<typeof api.tasks.update>[0]) => Promise<Task>;
+  deleteTask: (id: string) => Promise<void>;
 }
 
-export const useTaskStore = create<TaskStore>((set) => ({
+export const useTaskStore = create<TaskStore>((set, get) => ({
   tasks: [],
   loading: false,
   error: null,
@@ -392,19 +411,44 @@ export const useTaskStore = create<TaskStore>((set) => ({
   },
 
   toggleTask: async (task) => {
-    const newStatus = task.status === "done" ? "todo" : "done";
     try {
-      const updated = await api.tasks.update({
-        id: task.id,
-        status: newStatus,
-      });
-      set((state) => ({
-        tasks: state.tasks.map((t) => (t.id === updated.id ? updated : t)),
-      }));
-    } catch (e) {
-      set({ error: String(e) });
+      await get().updateTask({ id: task.id, status: task.status === "done" ? "todo" : "done" });
+    } catch {
+      /* error stored */
     }
   },
+
+  updateTask: async (input) => {
+    const before = get().tasks.find((t) => t.id === input.id);
+    try {
+      const updated = await api.tasks.update(input);
+      if (before?.recurrence && updated.status === "done" && before.status !== "done") {
+        // Completing a recurring task creates its next occurrence on the backend.
+        set({ tasks: await api.tasks.list() });
+      } else {
+        set((state) => ({
+          tasks: state.tasks.some((t) => t.id === updated.id)
+            ? state.tasks.map((t) => (t.id === updated.id ? updated : t))
+            : [updated, ...state.tasks],
+        }));
+      }
+      return updated;
+    } catch (e) {
+      set({ error: String(e) });
+      throw e;
+    }
+  },
+
+  deleteTask: async (id) => {
+    try {
+      await api.tasks.delete(id);
+      set((state) => ({ tasks: state.tasks.filter((t) => t.id !== id) }));
+    } catch (e) {
+      set({ error: String(e) });
+      throw e;
+    }
+  },
+
 }));
 
 interface CalendarStore {
@@ -432,11 +476,16 @@ export const useCalendarStore = create<CalendarStore>((set) => ({
 interface UiStore {
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: (open: boolean) => void;
+  /** Task shown in the global task dialog, if any. */
+  openTaskId: string | null;
+  openTask: (id: string | null) => void;
 }
 
 export const useUiStore = create<UiStore>((set) => ({
   commandPaletteOpen: false,
   setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
+  openTaskId: null,
+  openTask: (id) => set({ openTaskId: id }),
 }));
 
 interface FolderStore {
@@ -583,8 +632,10 @@ export const useGitHubStore = create<GitHubStore>((set) => ({
     set({ loading: true });
     try {
       await api.github.syncRepos();
-      await useGitHubStore.getState().fetchHubEntries();
-      await useProjectStore.getState().fetchProjects();
+      await Promise.all([
+        useGitHubStore.getState().fetchHubEntries(),
+        useProjectStore.getState().fetchProjects(true),
+      ]);
       set({ loading: false });
     } catch {
       set({ loading: false });
@@ -604,8 +655,10 @@ export const useGitHubStore = create<GitHubStore>((set) => ({
     set({ loading: true });
     try {
       await api.github.cloneRepo({ full_name: fullName });
-      await useProjectStore.getState().fetchProjects();
-      await useGitHubStore.getState().fetchHubEntries();
+      await Promise.all([
+        useProjectStore.getState().fetchProjects(true),
+        useGitHubStore.getState().fetchHubEntries(),
+      ]);
       set({ loading: false });
     } catch {
       set({ loading: false });

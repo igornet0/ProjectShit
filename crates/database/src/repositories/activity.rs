@@ -35,7 +35,10 @@ impl ActivityRepository {
         rows.into_iter().map(ActivityRow::into_activity).collect()
     }
 
-    pub async fn create(pool: &SqlitePool, activity: &Activity) -> Result<(), DbError> {
+    pub async fn create<'e, E>(executor: E, activity: &Activity) -> Result<(), DbError>
+    where
+        E: sqlx::Executor<'e, Database = sqlx::Sqlite>,
+    {
         let metadata = activity
             .metadata
             .as_ref()
@@ -52,7 +55,7 @@ impl ActivityRepository {
         .bind(&activity.message)
         .bind(metadata)
         .bind(activity.created_at.to_rfc3339())
-        .execute(pool)
+        .execute(executor)
         .await?;
         Ok(())
     }

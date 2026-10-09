@@ -1,6 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   Activity,
+  BrddBundle,
+  BrddRefreshAll,
+  BrddReport,
+  BrddSettings,
+  IssueSyncReport,
   CalendarEvent,
   EditorConfig,
   EditorDefinition,
@@ -15,6 +20,7 @@ import type {
   ProjectDetail,
   ProjectListItem,
   ProjectRoot,
+  RecurrenceFrequency,
   Task,
 } from "@/types";
 
@@ -58,21 +64,40 @@ export const api = {
     listByProject: (projectId: string) =>
       invoke<Task[]>("tasks_list_by_project", { projectId }),
     create: (input: {
-      project_id: string;
+      project_id?: string | null;
       title: string;
       description?: string;
-      priority?: string;
+      status?: Task["status"];
+      priority?: Task["priority"];
       due_at?: string;
+      recurrence?: { frequency: RecurrenceFrequency; interval?: number; until?: string };
     }) => invoke<Task>("tasks_create", { input }),
     update: (input: {
       id: string;
+      project_id?: string;
       title?: string;
       description?: string;
-      status?: string;
-      priority?: string;
+      status?: Task["status"];
+      priority?: Task["priority"];
       due_at?: string;
+      clear_due_at?: boolean;
+      clear_recurrence?: boolean;
     }) => invoke<Task>("tasks_update", { input }),
     delete: (id: string) => invoke<void>("tasks_delete", { id }),
+    createGithubIssue: (id: string, labels?: string[]) =>
+      invoke<unknown>("tasks_create_github_issue", { id, labels }),
+  },
+
+  brdd: {
+    get: (projectId: string) => invoke<BrddBundle>("brdd_get", { projectId }),
+    refresh: (projectId: string, forceSnapshot = false) =>
+      invoke<BrddReport>("brdd_refresh", { projectId, forceSnapshot }),
+    refreshAll: () => invoke<BrddRefreshAll>("brdd_refresh_all"),
+    saveNotes: (projectId: string, markdown: string) =>
+      invoke<BrddBundle>("brdd_save_notes", { projectId, markdown }),
+    getSettings: () => invoke<BrddSettings>("brdd_get_settings"),
+    saveSettings: (settings: BrddSettings) =>
+      invoke<BrddSettings>("brdd_save_settings", { settings }),
   },
 
   calendar: {
@@ -152,6 +177,7 @@ export const api = {
     syncRepos: () => invoke<GitHubRepo[]>("github_sync_repos"),
     cloneRepo: (input: { full_name: string; target_dir?: string | null }) =>
       invoke<Project>("github_clone_repo", { input }),
+    syncIssues: () => invoke<IssueSyncReport>("github_issues_sync"),
     listHub: (includeArchived?: boolean) =>
       invoke<HubProjectEntry[]>("projects_list_hub", { includeArchived }),
   },

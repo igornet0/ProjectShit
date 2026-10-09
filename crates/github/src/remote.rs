@@ -7,15 +7,7 @@ pub fn remote_urls_for_path(path: &Path) -> Vec<String> {
         return Vec::new();
     };
 
-    let repo = git.repo();
-    let Ok(remote) = repo.find_remote("origin") else {
-        return Vec::new();
-    };
-
-    remote
-        .url()
-        .map(|url| vec![url.to_string()])
-        .unwrap_or_default()
+    git.origin_url().into_iter().collect()
 }
 
 pub fn parse_github_full_name(url: &str) -> Option<String> {

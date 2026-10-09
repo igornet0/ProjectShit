@@ -30,7 +30,7 @@ pub struct ReorderFoldersInput {
 
 #[tauri::command]
 pub async fn folders_list(state: State<'_, SharedState>) -> Result<Vec<Folder>, String> {
-    let state = state.lock().await;
+    let state = state.inner();
     FolderService::list(&state).await.map_err(|e| e.to_string())
 }
 
@@ -39,7 +39,7 @@ pub async fn folders_create(
     state: State<'_, SharedState>,
     input: CreateFolderInput,
 ) -> Result<Folder, String> {
-    let state = state.lock().await;
+    let state = state.inner();
     let parent_id = input
         .parent_id
         .as_deref()
@@ -55,7 +55,7 @@ pub async fn folders_rename(
     state: State<'_, SharedState>,
     input: RenameFolderInput,
 ) -> Result<(), String> {
-    let state = state.lock().await;
+    let state = state.inner();
     let id = parse_folder_id(&input.id)?;
     FolderService::rename(&state, &id, input.name)
         .await
@@ -64,7 +64,7 @@ pub async fn folders_rename(
 
 #[tauri::command]
 pub async fn folders_delete(state: State<'_, SharedState>, id: String) -> Result<(), String> {
-    let state = state.lock().await;
+    let state = state.inner();
     FolderService::delete(&state, &parse_folder_id(&id)?)
         .await
         .map_err(|e| e.to_string())
@@ -75,7 +75,7 @@ pub async fn folders_assign_project(
     state: State<'_, SharedState>,
     input: AssignFolderInput,
 ) -> Result<(), String> {
-    let state = state.lock().await;
+    let state = state.inner();
     let project_id = parse_project_id(&input.project_id)?;
     let folder_id = input
         .folder_id
@@ -92,7 +92,7 @@ pub async fn folders_reorder(
     state: State<'_, SharedState>,
     input: ReorderFoldersInput,
 ) -> Result<(), String> {
-    let state = state.lock().await;
+    let state = state.inner();
     let ids: Result<Vec<FolderId>, String> = input
         .folder_ids
         .iter()

@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "apps/desktop",
+    "apps/server",
     "crates/domain",
     "crates/discovery",
     "crates/git",
@@ -9,11 +10,13 @@ members = [
     "crates/executor",
     "crates/watcher",
     "crates/github",
+    "crates/brdd",
+    "crates/core",
 ]
 
 [workspace.package]
 name = "ProjectShit"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 authors = ["igornet0"]
@@ -28,6 +31,8 @@ project-hub-database = { path = "crates/database" }
 project-hub-executor = { path = "crates/executor" }
 project-hub-watcher = { path = "crates/watcher" }
 project-hub-github = { path = "crates/github" }
+project-hub-brdd = { path = "crates/brdd" }
+project-hub-core = { path = "crates/core" }
 
 # Shared
 serde = { version = "1", features = ["derive"] }

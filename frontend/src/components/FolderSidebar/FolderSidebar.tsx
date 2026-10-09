@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useFolderStore, useProjectStore } from "@/stores";
 import { useTranslation } from "@/i18n";
+import { Icon } from "@/components/Icon/Icon";
 
 export function FolderSidebar() {
   const { t } = useTranslation();
@@ -116,24 +117,42 @@ export function FolderSidebar() {
     setDropTargetId(null);
   };
 
+  const renderView = (id: string, label: string, count: number) => (
+    <li className="folder-row">
+      <button
+        type="button"
+        className={`folder-item ${filterFolder === id ? "active" : ""}`}
+        onClick={() => setFilterFolder(id)}
+      >
+        <Icon name="folder" size={14} />
+        <span className="folder-item-name">{label}</span>
+        <span className="folder-count">{count}</span>
+      </button>
+    </li>
+  );
+
   return (
-    <aside className="folder-sidebar">
-      <div className="folder-sidebar-top">
-        <div>
-          <p className="folder-sidebar-eyebrow">{t("nav.projects")}</p>
-          <h2 className="folder-sidebar-title">{t("folders.title")}</h2>
-        </div>
+    <aside className="folder-sidebar" aria-label={t("folders.title")}>
+      <div className="folder-sidebar-head">{t("folders.views")}</div>
+      <ul className="folder-list">
+        {renderView("all", t("folders.all"), totalProjects)}
+        {renderView("none", t("folders.unassigned"), unassignedCount)}
+      </ul>
+
+      <div className="folder-sidebar-head">
+        <span>{t("folders.myFolders")}</span>
         <button
           type="button"
-          className="folder-add-btn"
+          className="icon-btn small"
           onClick={() => {
             clearError();
             setCreating((v) => !v);
           }}
+          title={t("folders.create")}
           aria-label={t("folders.create")}
           aria-expanded={creating}
         >
-          {creating ? "×" : "+"}
+          <Icon name={creating ? "x" : "plus"} size={14} />
         </button>
       </div>
 
@@ -144,16 +163,18 @@ export function FolderSidebar() {
       )}
 
       {creating && (
-        <form className="folder-create-card" onSubmit={handleCreate}>
-          <div className="folder-create-card-header">
-            <span className="folder-create-icon">📁</span>
-            <span>{t("folders.createTitle")}</span>
-          </div>
+        <form className="folder-create" onSubmit={handleCreate}>
           <input
-            className="folder-create-input"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setCreating(false);
+                setNewName("");
+              }
+            }}
             placeholder={t("folders.namePlaceholder")}
+            aria-label={t("folders.createTitle")}
             autoFocus
             disabled={submitting}
           />
@@ -182,94 +203,59 @@ export function FolderSidebar() {
       )}
 
       {loading && folders.length === 0 && (
-        <p className="muted folder-loading">{t("common.loading")}</p>
+        <p className="faint" style={{ padding: "4px 8px" }}>
+          {t("common.loading")}
+        </p>
       )}
 
-      <div className="folder-section">
-        <p className="folder-section-label">{t("folders.views")}</p>
-        <ul className="folder-list">
-          <li>
-            <button
-              type="button"
-              className={`folder-item ${filterFolder === "all" ? "active" : ""}`}
-              onClick={() => setFilterFolder("all")}
+      <ul className="folder-list">
+        {folders.map((folder) => {
+          const isDragging = dragId === folder.id;
+          const isDropTarget = dropTargetId === folder.id;
+          return (
+            <li
+              key={folder.id}
+              className={`folder-row ${isDragging ? "dragging" : ""} ${isDropTarget ? "drop-target" : ""}`}
+              onDragOver={handleDragOver(folder.id)}
+              onDragLeave={handleDragLeave(folder.id)}
+              onDrop={handleDrop(folder.id)}
             >
-              <span className="folder-item-left">
-                <span className="folder-item-icon">📂</span>
-                <span className="folder-item-name">{t("folders.all")}</span>
-              </span>
-              <span className="folder-count">{totalProjects}</span>
-            </button>
-          </li>
-          <li>
-            <button
-              type="button"
-              className={`folder-item ${filterFolder === "none" ? "active" : ""}`}
-              onClick={() => setFilterFolder("none")}
-            >
-              <span className="folder-item-left">
-                <span className="folder-item-icon">📁</span>
-                <span className="folder-item-name">{t("folders.unassigned")}</span>
-              </span>
-              <span className="folder-count">{unassignedCount}</span>
-            </button>
-          </li>
-        </ul>
-      </div>
-
-      {folders.length > 0 && (
-        <div className="folder-section">
-          <p className="folder-section-label">{t("folders.myFolders")}</p>
-          <p className="folder-drag-hint">{t("folders.dragHint")}</p>
-          <ul className="folder-list folder-list--draggable">
-            {folders.map((folder) => {
-              const isDragging = dragId === folder.id;
-              const isDropTarget = dropTargetId === folder.id;
-              return (
-                <li
-                  key={folder.id}
-                  className={`folder-list-row ${isDragging ? "dragging" : ""} ${isDropTarget ? "drop-target" : ""}`}
-                  onDragOver={handleDragOver(folder.id)}
-                  onDragLeave={handleDragLeave(folder.id)}
-                  onDrop={handleDrop(folder.id)}
+              <button
+                type="button"
+                className={`folder-item ${filterFolder === folder.id ? "active" : ""}`}
+                draggable={false}
+                onClick={() => setFilterFolder(folder.id)}
+              >
+                <Icon name="folder" size={14} />
+                <span className="folder-item-name">{folder.name}</span>
+                <span className="folder-count">{folder.project_count}</span>
+              </button>
+              <span className="folder-row-tools">
+                <span
+                  className="icon-btn small folder-drag-handle"
+                  title={t("folders.dragHint")}
+                  aria-label={t("folders.dragHint")}
+                  draggable
+                  onDragStart={handleDragStart(folder.id)}
+                  onDragEnd={handleDragEnd}
                 >
-                  <span
-                    className="folder-drag-handle"
-                    title={t("folders.dragHint")}
-                    aria-label={t("folders.dragHint")}
-                    draggable
-                    onDragStart={handleDragStart(folder.id)}
-                    onDragEnd={handleDragEnd}
-                  >
-                    ⠿
-                  </span>
-                  <button
-                    type="button"
-                    className={`folder-item ${filterFolder === folder.id ? "active" : ""}`}
-                    draggable={false}
-                    onClick={() => setFilterFolder(folder.id)}
-                  >
-                    <span className="folder-item-left">
-                      <span className="folder-item-icon">🗂️</span>
-                      <span className="folder-item-name">{folder.name}</span>
-                    </span>
-                    <span className="folder-count">{folder.project_count}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="folder-delete-btn"
-                    title={t("common.remove")}
-                    draggable={false}
-                    onClick={() => handleDelete(folder.id)}
-                  >
-                    ✕
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
+                  <Icon name="grip" size={13} />
+                </span>
+                <button
+                  type="button"
+                  className="icon-btn small danger"
+                  title={t("common.remove")}
+                  aria-label={t("common.remove")}
+                  draggable={false}
+                  onClick={() => handleDelete(folder.id)}
+                >
+                  <Icon name="x" size={13} />
+                </button>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
     </aside>
   );
 }

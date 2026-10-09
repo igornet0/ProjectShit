@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use project_hub_domain::GitHubRepo;
 use reqwest::header::{ACCEPT, AUTHORIZATION, USER_AGENT};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -28,17 +28,130 @@ pub enum GitHubError {
     OAuthDenied,
 }
 
+pub const GITHUB_API: &str = "https://api.github.com";
+
+/// Issue (or pull request — GitHub lists both) as Project Hub uses it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GitHubIssue {
+    pub number: i64,
+    pub title: String,
+    /// `open` | `closed`
+    pub state: String,
+    pub html_url: String,
+    #[serde(default)]
+    pub body: Option<String>,
+    #[serde(default)]
+    pub labels: Vec<String>,
+    pub updated_at: DateTime<Utc>,
+    #[serde(default)]
+    pub is_pull_request: bool,
+}
+
 pub struct GitHubClient {
     http: reqwest::Client,
     token: String,
+    base: String,
 }
 
 impl GitHubClient {
     pub fn new(token: impl Into<String>) -> Self {
+        // `PROJECT_HUB_GITHUB_API` points the client at GitHub Enterprise or a test server.
+        let base = std::env::var("PROJECT_HUB_GITHUB_API")
+            .ok()
+            .map(|b| b.trim().trim_end_matches('/').to_string())
+            .filter(|b| !b.is_empty())
+            .unwrap_or_else(|| GITHUB_API.to_string());
+        Self::with_api_base(token, base)
+    }
+
+    pub fn with_api_base(token: impl Into<String>, base: impl Into<String>) -> Self {
         Self {
             http: reqwest::Client::new(),
             token: token.into(),
+            base: base.into(),
         }
+    }
+
+    /// Issues of `owner/repo` (pull requests excluded), newest first.
+    pub async fn list_issues(&self, full_name: &str, state: &str, limit: usize) -> Result<Vec<GitHubIssue>, GitHubError> {
+        let state = match state {
+            "open" | "closed" | "all" => state,
+            _ => "open",
+        };
+        let per_page = limit.clamp(1, 100);
+        let raw: Vec<ApiIssue> = self
+            .get(&format!("/repos/{full_name}/issues?state={state}&per_page={per_page}&sort=updated"))
+            .await?;
+        Ok(raw
+            .into_iter()
+            .filter_map(ApiIssue::into_issue)
+            .filter(|i| !i.is_pull_request)
+            .take(limit)
+            .collect())
+    }
+
+    pub async fn get_issue(&self, full_name: &str, number: i64) -> Result<GitHubIssue, GitHubError> {
+        let raw: ApiIssue = self.get(&format!("/repos/{full_name}/issues/{number}")).await?;
+        raw.into_issue().ok_or_else(|| GitHubError::Api {
+            status: 500,
+            message: "malformed issue".into(),
+        })
+    }
+
+    pub async fn create_issue(
+        &self,
+        full_name: &str,
+        title: &str,
+        body: Option<&str>,
+        labels: &[String],
+    ) -> Result<GitHubIssue, GitHubError> {
+        let mut payload = serde_json::json!({ "title": title });
+        if let Some(body) = body.filter(|b| !b.trim().is_empty()) {
+            payload["body"] = serde_json::json!(body);
+        }
+        if !labels.is_empty() {
+            payload["labels"] = serde_json::json!(labels);
+        }
+        let raw: ApiIssue = self
+            .send(reqwest::Method::POST, &format!("/repos/{full_name}/issues"), &payload)
+            .await?;
+        raw.into_issue().ok_or_else(|| GitHubError::Api {
+            status: 500,
+            message: "malformed issue".into(),
+        })
+    }
+
+    /// Open or close an issue.
+    pub async fn set_issue_state(&self, full_name: &str, number: i64, state: &str) -> Result<GitHubIssue, GitHubError> {
+        let raw: ApiIssue = self
+            .send(
+                reqwest::Method::PATCH,
+                &format!("/repos/{full_name}/issues/{number}"),
+                &serde_json::json!({ "state": state }),
+            )
+            .await?;
+        raw.into_issue().ok_or_else(|| GitHubError::Api {
+            status: 500,
+            message: "malformed issue".into(),
+        })
+    }
+
+    async fn send<T: for<'de> Deserialize<'de>>(
+        &self,
+        method: reqwest::Method,
+        path: &str,
+        body: &serde_json::Value,
+    ) -> Result<T, GitHubError> {
+        let response = self
+            .http
+            .request(method, format!("{}{path}", self.base))
+            .header(USER_AGENT, "ProjectHub/0.1")
+            .header(ACCEPT, "application/vnd.github+json")
+            .header(AUTHORIZATION, format!("Bearer {}", self.token))
+            .json(body)
+            .send()
+            .await?;
+        Self::decode(response).await
     }
 
     pub async fn validate_token(&self) -> Result<String, GitHubError> {
@@ -78,7 +191,7 @@ impl GitHubClient {
     }
 
     async fn get<T: for<'de> Deserialize<'de>>(&self, path: &str) -> Result<T, GitHubError> {
-        let url = format!("https://api.github.com{path}");
+        let url = format!("{}{path}", self.base);
         let response = self
             .http
             .get(&url)
@@ -87,7 +200,10 @@ impl GitHubClient {
             .header(AUTHORIZATION, format!("Bearer {}", self.token))
             .send()
             .await?;
+        Self::decode(response).await
+    }
 
+    async fn decode<T: for<'de> Deserialize<'de>>(response: reqwest::Response) -> Result<T, GitHubError> {
         let status = response.status();
         if status.as_u16() == 401 {
             return Err(GitHubError::InvalidToken);
@@ -101,6 +217,40 @@ impl GitHubClient {
         }
 
         Ok(response.json().await?)
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct ApiIssue {
+    number: i64,
+    title: String,
+    state: String,
+    html_url: String,
+    body: Option<String>,
+    #[serde(default)]
+    labels: Vec<ApiLabel>,
+    updated_at: String,
+    #[serde(default)]
+    pull_request: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ApiLabel {
+    name: String,
+}
+
+impl ApiIssue {
+    fn into_issue(self) -> Option<GitHubIssue> {
+        Some(GitHubIssue {
+            number: self.number,
+            title: self.title,
+            state: self.state,
+            html_url: self.html_url,
+            body: self.body,
+            labels: self.labels.into_iter().map(|l| l.name).collect(),
+            updated_at: DateTime::parse_from_rfc3339(&self.updated_at).ok()?.with_timezone(&Utc),
+            is_pull_request: self.pull_request.is_some(),
+        })
     }
 }
 

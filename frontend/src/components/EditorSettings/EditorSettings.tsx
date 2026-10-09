@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useEditorStore } from "@/stores";
+import { Icon } from "@/components/Icon/Icon";
 import { useTranslation } from "@/i18n";
 
 export function EditorSettings() {
@@ -12,13 +13,14 @@ export function EditorSettings() {
   const [customCommand, setCustomCommand] = useState("");
   const [customArgs, setCustomArgs] = useState("{path}");
   const [saving, setSaving] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   useEffect(() => {
     fetchConfig();
   }, [fetchConfig]);
 
   const handleDefaultChange = async (editorId: string) => {
-    if (!config) return;
+    if (!config || config.default_editor_id === editorId) return;
     setSaving(true);
     try {
       await saveConfig({ ...config, default_editor_id: editorId });
@@ -46,6 +48,7 @@ export function EditorSettings() {
       setCustomName("");
       setCustomCommand("");
       setCustomArgs("{path}");
+      setShowAddForm(false);
     } finally {
       setSaving(false);
     }
@@ -56,81 +59,104 @@ export function EditorSettings() {
   }
 
   const editors = config?.editors ?? [];
+  const defaultId = config?.default_editor_id ?? "";
 
   return (
     <div className="editor-settings">
-      <label className="filter-field">
-        <span>{t("settings.defaultEditor")}</span>
-        <select
-          value={config?.default_editor_id ?? ""}
-          disabled={saving}
-          onChange={(e) => handleDefaultChange(e.target.value)}
-        >
-          {editors.map((ed) => (
-            <option key={ed.id} value={ed.id}>
-              {ed.name}
-              {!ed.builtin ? " (custom)" : ""}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <ul className="simple-list editor-list">
-        {editors.map((ed) => (
-          <li key={ed.id}>
-            <strong>{ed.name}</strong>
-            <code className="editor-cmd">
-              {ed.command} {ed.args.join(" ")}
-            </code>
-          </li>
-        ))}
+      <p className="settings-section-label">{t("settings.installedEditors")}</p>
+      <ul className="choice-list" role="radiogroup" aria-label={t("settings.defaultEditor")}>
+        {editors.map((ed) => {
+          const isDefault = ed.id === defaultId;
+          return (
+            <li key={ed.id}>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={isDefault}
+                className={`choice${isDefault ? " active" : ""}`}
+                disabled={saving}
+                onClick={() => handleDefaultChange(ed.id)}
+              >
+                <span className="choice-radio" aria-hidden="true" />
+                <span className="choice-main">
+                  <span className="choice-title">
+                    {ed.name}
+                    {isDefault && <span className="badge accent">{t("settings.defaultBadge")}</span>}
+                    {!ed.builtin && <span className="badge outline">custom</span>}
+                  </span>
+                  <code className="choice-sub mono">
+                    {ed.command} {ed.args.join(" ")}
+                  </code>
+                </span>
+              </button>
+            </li>
+          );
+        })}
       </ul>
 
-      <h3 className="editor-subheading">{t("settings.addCustomEditor")}</h3>
-      <form className="editor-form" onSubmit={handleAddCustom}>
-        <div className="editor-form-row">
-          <label>
-            <span>{t("settings.editorId")}</span>
-            <input
-              value={customId}
-              onChange={(e) => setCustomId(e.target.value)}
-              placeholder="webstorm"
-              required
-            />
-          </label>
-          <label>
-            <span>{t("settings.editorName")}</span>
-            <input
-              value={customName}
-              onChange={(e) => setCustomName(e.target.value)}
-              placeholder="WebStorm"
-              required
-            />
-          </label>
-        </div>
-        <div className="editor-form-row">
-          <label>
-            <span>{t("settings.editorCommand")}</span>
-            <input
-              value={customCommand}
-              onChange={(e) => setCustomCommand(e.target.value)}
-              placeholder="webstorm"
-              required
-            />
-          </label>
-          <label>
-            <span>{t("settings.editorArgs")}</span>
-            <input
-              value={customArgs}
-              onChange={(e) => setCustomArgs(e.target.value)}
-              placeholder="{path}"
-            />
-          </label>
-        </div>
-        <button type="submit" className="btn primary" disabled={saving}>
+      {!showAddForm ? (
+        <button
+          type="button"
+          className="btn add-row-btn"
+          onClick={() => setShowAddForm(true)}
+        >
+          <Icon name="plus" size={14} />
           {t("settings.addCustomEditor")}
         </button>
-      </form>
+      ) : (
+        <form className="editor-add-form" onSubmit={handleAddCustom}>
+          <div className="editor-add-form-head">
+            <h3>{t("settings.addCustomEditor")}</h3>
+          </div>
+          <div className="form-grid">
+            <label className="field">
+              <span>{t("settings.editorId")}</span>
+              <input
+                value={customId}
+                onChange={(e) => setCustomId(e.target.value)}
+                placeholder="webstorm"
+                required
+              />
+            </label>
+            <label className="field">
+              <span>{t("settings.editorName")}</span>
+              <input
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                placeholder="WebStorm"
+                required
+              />
+            </label>
+            <label className="field">
+              <span>{t("settings.editorCommand")}</span>
+              <input
+                className="mono"
+                value={customCommand}
+                onChange={(e) => setCustomCommand(e.target.value)}
+                placeholder="webstorm"
+                required
+              />
+            </label>
+            <label className="field">
+              <span>{t("settings.editorArgs")}</span>
+              <input
+                className="mono"
+                value={customArgs}
+                onChange={(e) => setCustomArgs(e.target.value)}
+                placeholder="{path}"
+              />
+            </label>
+          </div>
+          <div className="form-actions">
+            <button type="button" className="btn ghost" onClick={() => setShowAddForm(false)}>
+              {t("common.cancel")}
+            </button>
+            <button type="submit" className="btn primary" disabled={saving}>
+              {t("common.add")}
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }

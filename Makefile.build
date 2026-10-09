@@ -97,7 +97,9 @@ else
   TARGET_DIR_REL := target/$(TARGET)/release
 endif
 
-BUNDLE_SRC := $(DESKTOP_DIR)/$(TARGET_DIR_REL)/bundle
+# Cargo workspace: artifacts land in repo-root target/, not apps/desktop/target/
+CARGO_TARGET_DIR := $(ROOT_DIR)/target
+BUNDLE_SRC := $(CARGO_TARGET_DIR)/$(subst target/,,$(TARGET_DIR_REL))/bundle
 
 # Skip tauri beforeBuildCommand (frontend built by Makefile)
 TAURI_ENV := CI=true
@@ -230,7 +232,7 @@ bundle-linux-x64-docker: frontend docker-image-linux-x64 ## deb + AppImage x86_6
 		-v "$(ROOT_DIR):/workspace" \
 		-v "$(DOCKER_CARGO_REGISTRY_VOL):/root/.cargo/registry" \
 		-v "$(DOCKER_CARGO_GIT_VOL):/root/.cargo/git" \
-		-v "$(DOCKER_TARGET_LINUX_X64_VOL):/workspace/apps/desktop/target" \
+		-v "$(DOCKER_TARGET_LINUX_X64_VOL):/workspace/target" \
 		-w /workspace/apps/desktop \
 		"$(DOCKER_IMAGE_LINUX_X64)" \
 		env CI=true cargo tauri build --ci
@@ -289,14 +291,18 @@ collect: ## Copy bundle/ tree into bundles/<target>/
 	@dest_name="$(COLLECT_AS)"; \
 	if [ -z "$$dest_name" ]; then dest_name="$(TARGET)"; fi; \
 	if [ -z "$$dest_name" ]; then dest_name="native-$(HOST_OS)-$(HOST_ARCH)"; fi; \
-	src="$(DESKTOP_DIR)/target"; \
 	if [ -n "$(TARGET)" ]; then \
-		bundle_dir="$$src/$(TARGET)/release/bundle"; \
+		bundle_dir="$(CARGO_TARGET_DIR)/$(TARGET)/release/bundle"; \
+		legacy_dir="$(DESKTOP_DIR)/target/$(TARGET)/release/bundle"; \
 	else \
-		bundle_dir="$$src/release/bundle"; \
+		bundle_dir="$(CARGO_TARGET_DIR)/release/bundle"; \
+		legacy_dir="$(DESKTOP_DIR)/target/release/bundle"; \
+	fi; \
+	if [ ! -d "$$bundle_dir" ] && [ -d "$$legacy_dir" ]; then \
+		bundle_dir="$$legacy_dir"; \
 	fi; \
 	if [ ! -d "$$bundle_dir" ]; then \
-		echo "No bundle output at $$bundle_dir"; \
+		echo "No bundle output at $$bundle_dir (also checked $$legacy_dir)"; \
 		exit 1; \
 	fi; \
 	mkdir -p "$(BUNDLES_DIR)/$$dest_name"; \
@@ -306,10 +312,10 @@ collect: ## Copy bundle/ tree into bundles/<target>/
 # ── Clean ────────────────────────────────────────────────────────────────────
 
 .PHONY: clean clean-bundles clean-target
-clean: clean-bundles clean-target ## Remove bundles/ and apps/desktop/target/
+clean: clean-bundles clean-target ## Remove bundles/ and target/
 
 clean-bundles:
 	rm -rf "$(BUNDLES_DIR)"
 
 clean-target:
-	rm -rf "$(DESKTOP_DIR)/target"
+	rm -rf "$(CARGO_TARGET_DIR)" "$(DESKTOP_DIR)/target"

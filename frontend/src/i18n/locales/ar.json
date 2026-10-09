@@ -5,7 +5,8 @@
     "tasks": "المهام",
     "calendar": "التقويم",
     "settings": "الإعدادات",
-    "commandHint": "اضغط {{shortcut}} لفتح لوحة الأوامر"
+    "commandHint": "اضغط {{shortcut}} لفتح لوحة الأوامر",
+    "search": "بحث"
   },
   "common": {
     "loading": "جارٍ التحميل…",
@@ -16,7 +17,8 @@
     "viewAll": "عرض الكل ←",
     "backToProjects": "المشاريع →",
     "notFound": "غير موجود",
-    "shortcut": "⌘K"
+    "shortcut": "⌘K",
+    "save": "حفظ"
   },
   "greeting": {
     "morning": "صباح الخير",
@@ -33,7 +35,7 @@
   "projects": {
     "title": "Project Hub",
     "subtitle": "معرض مشاريع محلي أولاً",
-    "addProject": "+ إضافة مشروع",
+    "addProject": "إضافة مشروع",
     "searchPlaceholder": "البحث في المشاريع…",
     "selectDirectory": "اختر مجلد المشروع",
     "emptyTitle": "لا توجد مشاريع بعد",
@@ -62,7 +64,11 @@
     "ghost": "Not installed",
     "install": "Install",
     "ghostSection": "GitHub — not on this machine",
-    "ghostHint": "These repos are on your GitHub but not cloned locally yet."
+    "ghostHint": "These repos are on your GitHub but not cloned locally yet.",
+    "columns": {
+      "name": "الاسم",
+      "path": "المسار"
+    }
   },
   "projectDetail": {
     "loading": "جارٍ تحميل المشروع…",
@@ -86,7 +92,28 @@
     "title": "المهام",
     "newPlaceholder": "مهمة جديدة…",
     "loading": "جارٍ تحميل المهام…",
-    "empty": "لا توجد مهام بعد."
+    "empty": "لا توجد مهام بعد.",
+    "priority": "الأولوية",
+    "status": "الحالة",
+    "dueDate": "الموعد النهائي",
+    "personal": "شخصية",
+    "allStatuses": "كل الحالات",
+    "allPriorities": "كل الأولويات",
+    "openOnly": "مفتوحة",
+    "repeat": "تكرار",
+    "repeatNone": "بدون تكرار",
+    "repeatEvery": "كل",
+    "repeatUntil": "حتى",
+    "repeatNoEnd": "بدون تاريخ انتهاء",
+    "repeatProjected": "تكرار قادم",
+    "repeatEveryN": "كل {{count}} {{unit}}",
+    "project": "المشروع",
+    "description": "الوصف",
+    "openProject": "فتح المشروع",
+    "delete": "حذف المهمة",
+    "deleteConfirm": "حذف المهمة «{{title}}»؟",
+    "stopRepeat": "إيقاف التكرار",
+    "descriptionPlaceholder": "أضف التفاصيل…"
   },
   "calendar": {
     "title": "التقويم",
@@ -99,20 +126,29 @@
       "fri": "جم",
       "sat": "سب",
       "sun": "أح"
-    }
+    },
+    "showEvents": "الأحداث",
+    "today": "اليوم",
+    "prevMonth": "الشهر السابق",
+    "nextMonth": "الشهر التالي"
   },
   "settings": {
     "title": "الإعدادات",
+    "subtitle": "اللغة والمحررات ومزامنة GitHub ودلائل المسح",
     "language": "اللغة",
     "languageHint": "اختر لغة الواجهة. يُطبَّق فوراً.",
     "projectRoots": "جذور المشاريع",
     "projectRootsHint": "المجلدات التي يتم فحصها للمشاريع. أضف الجذور من صفحة المشاريع.",
     "noRoots": "لم يتم تكوين جذور للمشاريع.",
+    "rootsCount": "{{count}} دلائل",
+    "goToProjects": "الإدارة من صفحة المشاريع",
     "about": "حول",
     "aboutText": "Project Hub v0.1 — مساحة عمل للمطورين محلية أولاً",
     "editors": "IDE / Editor",
     "editorsHint": "Choose the default editor for opening projects. Use {path} in custom command args.",
     "defaultEditor": "Default editor",
+    "defaultBadge": "Default",
+    "installedEditors": "Installed editors",
     "customEditors": "Custom editors",
     "addCustomEditor": "Add custom editor",
     "editorId": "ID",
@@ -138,13 +174,22 @@
     "githubOAuthClientIdPlaceholder": "Or set GITHUB_OAUTH_CLIENT_ID env var",
     "githubCreateOAuthApp": "Create OAuth App",
     "githubAdvanced": "Advanced",
-    "githubRepoStats": "{{local}} local · {{remote}} on GitHub"
+    "githubRepoStats": "{{local}} local · {{remote}} on GitHub",
+    "githubLocal": "Local repos",
+    "githubRemote": "Not cloned",
+    "brdd": ".brdd & automation",
+    "brddHint": "Per-project analysis folder, version tracking and GitHub issue sync."
   },
   "commandPalette": {
     "placeholder": "البحث في المشاريع والإجراءات…",
     "openProject": "فتح {{name}}",
     "searchProjects": "البحث في المشاريع",
-    "createTask": "إنشاء مهمة"
+    "createTask": "إنشاء مهمة",
+    "actions": "إجراءات",
+    "navigate": "تنقل",
+    "select": "فتح",
+    "close": "إغلاق",
+    "empty": "لا توجد نتائج"
   },
   "git": {
     "loading": "جارٍ تحميل حالة Git…",
@@ -182,6 +227,32 @@
       "web": "Web",
       "embedded": "مضمّن",
       "unknown": "غير معروف"
+    },
+    "taskStatus": {
+      "todo": "للتنفيذ",
+      "in_progress": "قيد التنفيذ",
+      "done": "مكتملة",
+      "cancelled": "ملغاة"
+    },
+    "taskPriority": {
+      "low": "منخفضة",
+      "medium": "متوسطة",
+      "high": "عالية",
+      "critical": "حرجة"
+    },
+    "recurrence": {
+      "daily": "يوميًا",
+      "weekly": "أسبوعيًا",
+      "monthly": "شهريًا",
+      "quarterly": "كل ربع سنة",
+      "yearly": "سنويًا"
+    },
+    "recurrenceUnit": {
+      "daily": "ي",
+      "weekly": "أسبوع",
+      "monthly": "شهر",
+      "quarterly": "ربع",
+      "yearly": "سنة"
     }
   },
   "folders": {
@@ -195,5 +266,38 @@
     "views": "Views",
     "myFolders": "My folders",
     "dragHint": "Drag to reorder"
+  },
+  "brdd": {
+    "snapshots": "{{count}} snapshots",
+    "refresh": "Refresh",
+    "create": "Create .brdd",
+    "snapshot": "Snapshot",
+    "snapshotHint": "Record a version snapshot even if nothing changed",
+    "empty": "No .brdd folder yet. It holds a short analysis of the project, version snapshots and a changelog — create it to start tracking.",
+    "size": "{{files}} files · {{loc}} LOC",
+    "tasks": "tasks {{done}}/{{total}}",
+    "analyzed": "analyzed {{when}}",
+    "lastSnapshot": "snapshot #{{n}} ({{reason}})",
+    "reason": {
+      "initial": "first",
+      "version": "version changed",
+      "commits": "new commits",
+      "manual": "manual"
+    },
+    "tab": {
+      "summary": "Summary",
+      "changes": "Changes",
+      "notes": "AI notes"
+    },
+    "notesPlaceholder": "Notes about the project — written by you or by an AI agent (BoardDo). Kept across refreshes.",
+    "notesHint": "Saved to .brdd/ai-summary.md",
+    "autoOnScan": "Maintain .brdd automatically",
+    "autoOnScanHint": "Refresh the folder of every project found or refreshed by a scan.",
+    "excludeFromGit": "Keep .brdd out of git",
+    "excludeFromGitHint": "Adds /.brdd/ to .git/info/exclude (local only) so the repository stays clean.",
+    "refreshAll": "Refresh .brdd for all projects",
+    "refreshAllDone": "Refreshed: {{ok}}, failed: {{failed}}",
+    "syncIssues": "Sync GitHub issues",
+    "issuesSynced": "Checked {{checked}} linked issues · tasks done: {{done}} · issues closed: {{closed}}"
   }
 }

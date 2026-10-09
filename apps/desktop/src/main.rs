@@ -1,14 +1,17 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod commands;
-mod services;
+
+/// Application services live in `project-hub-core` (shared with the HTTP server).
+mod services {
+    pub use project_hub_core::*;
+}
 
 use std::sync::Arc;
 
 use project_hub_database::init_db;
 use services::AppState;
 use tauri::Manager;
-use tokio::sync::Mutex;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use commands::SharedState;
@@ -39,7 +42,7 @@ fn main() {
                 .block_on(init_db(&db_path))
                 .expect("failed to initialize database");
 
-            let state: SharedState = Arc::new(Mutex::new(AppState::new(db)));
+            let state: SharedState = Arc::new(AppState::new(db));
             app.manage(state);
 
             Ok(())
@@ -68,6 +71,14 @@ fn main() {
             commands::tasks_create,
             commands::tasks_update,
             commands::tasks_delete,
+            commands::tasks_create_github_issue,
+            commands::github_issues_sync,
+            commands::brdd_get,
+            commands::brdd_refresh,
+            commands::brdd_refresh_all,
+            commands::brdd_save_notes,
+            commands::brdd_get_settings,
+            commands::brdd_save_settings,
             commands::calendar_list,
             commands::calendar_create,
             commands::git_status,

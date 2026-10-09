@@ -1,6 +1,8 @@
+import type { ReactNode } from "react";
 import type { ProjectListItem } from "@/types";
 import type { VisibleProjectRow } from "@/utils/projectTree";
 import { ProjectCard } from "@/components/ProjectCard/ProjectCard";
+import { Icon } from "@/components/Icon/Icon";
 import { useTranslation } from "@/i18n";
 
 interface ProjectGridProps {
@@ -29,20 +31,25 @@ export function ProjectGrid({
   const { t } = useTranslation();
 
   if (loading) {
-    return <div className="empty-state">{t("projects.loading")}</div>;
+    return (
+      <div className="panel empty-state">
+        <p>{t("projects.loading")}</p>
+      </div>
+    );
   }
 
   if (rows.length === 0) {
     return (
-      <div className="empty-state">
-        <p>{t("projects.emptyTitle")}</p>
-        <p className="muted">{t("projects.emptyHint")}</p>
+      <div className="panel empty-state">
+        <Icon name="folder" size={28} />
+        <p className="empty-state-title">{t("projects.emptyTitle")}</p>
+        <p>{t("projects.emptyHint")}</p>
       </div>
     );
   }
 
   return (
-    <div className="project-grid project-grid--tree">
+    <ProjectTable>
       {rows.map(({ project, depth }) => (
         <ProjectCard
           key={project.id}
@@ -57,6 +64,45 @@ export function ProjectGrid({
           onArchive={onArchive}
         />
       ))}
+    </ProjectTable>
+  );
+}
+
+/** Table frame with column headers shared by local and compact project rows. */
+export function ProjectTable({
+  children,
+  compact = false,
+}: {
+  children: ReactNode;
+  compact?: boolean;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <div className={`panel project-table${compact ? " compact" : ""}`} role="table">
+      <div className="project-table-head" role="row">
+        <span role="columnheader">{t("projects.columns.name")}</span>
+        {!compact && (
+          <span className="col-path" role="columnheader">
+            {t("projects.columns.path")}
+          </span>
+        )}
+        <span className="col-lang" role="columnheader">
+          {t("projects.filterLanguage")}
+        </span>
+        {!compact && (
+          <span className="col-modified" role="columnheader">
+            {t("projects.lastModified")}
+          </span>
+        )}
+        {!compact && (
+          <span className="col-folder" role="columnheader">
+            {t("folders.title")}
+          </span>
+        )}
+        <span role="columnheader" />
+      </div>
+      {children}
     </div>
   );
 }

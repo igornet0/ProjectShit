@@ -5,7 +5,8 @@
     "tasks": "タスク",
     "calendar": "カレンダー",
     "settings": "設定",
-    "commandHint": "{{shortcut}} でコマンドパレットを開く"
+    "commandHint": "{{shortcut}} でコマンドパレットを開く",
+    "search": "検索"
   },
   "common": {
     "loading": "読み込み中…",
@@ -16,7 +17,8 @@
     "viewAll": "すべて表示 →",
     "backToProjects": "← プロジェクト",
     "notFound": "見つかりません",
-    "shortcut": "⌘K"
+    "shortcut": "⌘K",
+    "save": "保存"
   },
   "greeting": {
     "morning": "おはようございます",
@@ -33,7 +35,7 @@
   "projects": {
     "title": "Project Hub",
     "subtitle": "ローカルファーストのプロジェクトギャラリー",
-    "addProject": "+ プロジェクトを追加",
+    "addProject": "プロジェクトを追加",
     "searchPlaceholder": "プロジェクトを検索…",
     "selectDirectory": "プロジェクトディレクトリを選択",
     "emptyTitle": "プロジェクトがありません",
@@ -62,7 +64,11 @@
     "ghost": "Not installed",
     "install": "Install",
     "ghostSection": "GitHub — not on this machine",
-    "ghostHint": "These repos are on your GitHub but not cloned locally yet."
+    "ghostHint": "These repos are on your GitHub but not cloned locally yet.",
+    "columns": {
+      "name": "名前",
+      "path": "パス"
+    }
   },
   "projectDetail": {
     "loading": "プロジェクトを読み込み中…",
@@ -86,7 +92,28 @@
     "title": "タスク",
     "newPlaceholder": "新しいタスク…",
     "loading": "タスクを読み込み中…",
-    "empty": "タスクがありません。"
+    "empty": "タスクがありません。",
+    "priority": "優先度",
+    "status": "ステータス",
+    "dueDate": "期限",
+    "personal": "個人",
+    "allStatuses": "すべてのステータス",
+    "allPriorities": "すべての優先度",
+    "openOnly": "未完了",
+    "repeat": "繰り返し",
+    "repeatNone": "繰り返さない",
+    "repeatEvery": "間隔",
+    "repeatUntil": "終了日",
+    "repeatNoEnd": "終了日なし",
+    "repeatProjected": "今後の繰り返し",
+    "repeatEveryN": "{{count}}{{unit}}ごと",
+    "project": "プロジェクト",
+    "description": "説明",
+    "openProject": "プロジェクトを開く",
+    "delete": "タスクを削除",
+    "deleteConfirm": "タスク「{{title}}」を削除しますか？",
+    "stopRepeat": "繰り返しを停止",
+    "descriptionPlaceholder": "詳細を追加…"
   },
   "calendar": {
     "title": "カレンダー",
@@ -99,20 +126,29 @@
       "fri": "金",
       "sat": "土",
       "sun": "日"
-    }
+    },
+    "showEvents": "イベント",
+    "today": "今日",
+    "prevMonth": "前の月",
+    "nextMonth": "次の月"
   },
   "settings": {
     "title": "設定",
+    "subtitle": "言語、エディター、GitHub 同期、スキャン対象ディレクトリ",
     "language": "言語",
     "languageHint": "インターフェースの言語を選択します。すぐに反映されます。",
     "projectRoots": "プロジェクトルート",
     "projectRootsHint": "プロジェクトをスキャンするディレクトリ。プロジェクトページからルートを追加できます。",
     "noRoots": "プロジェクトルートが設定されていません。",
+    "rootsCount": "{{count}} 件のディレクトリ",
+    "goToProjects": "プロジェクトページで管理",
     "about": "このアプリについて",
     "aboutText": "Project Hub v0.1 — ローカルファーストの開発者ワークスペース",
     "editors": "IDE / Editor",
     "editorsHint": "Choose the default editor for opening projects. Use {path} in custom command args.",
     "defaultEditor": "Default editor",
+    "defaultBadge": "Default",
+    "installedEditors": "Installed editors",
     "customEditors": "Custom editors",
     "addCustomEditor": "Add custom editor",
     "editorId": "ID",
@@ -138,13 +174,22 @@
     "githubOAuthClientIdPlaceholder": "Or set GITHUB_OAUTH_CLIENT_ID env var",
     "githubCreateOAuthApp": "Create OAuth App",
     "githubAdvanced": "Advanced",
-    "githubRepoStats": "{{local}} local · {{remote}} on GitHub"
+    "githubRepoStats": "{{local}} local · {{remote}} on GitHub",
+    "githubLocal": "Local repos",
+    "githubRemote": "Not cloned",
+    "brdd": ".brdd & automation",
+    "brddHint": "Per-project analysis folder, version tracking and GitHub issue sync."
   },
   "commandPalette": {
     "placeholder": "プロジェクト、アクションを検索…",
     "openProject": "{{name}} を開く",
     "searchProjects": "プロジェクトを検索",
-    "createTask": "タスクを作成"
+    "createTask": "タスクを作成",
+    "actions": "アクション",
+    "navigate": "移動",
+    "select": "開く",
+    "close": "閉じる",
+    "empty": "結果なし"
   },
   "git": {
     "loading": "Git ステータスを読み込み中…",
@@ -182,6 +227,32 @@
       "web": "Web",
       "embedded": "組み込み",
       "unknown": "不明"
+    },
+    "taskStatus": {
+      "todo": "未着手",
+      "in_progress": "進行中",
+      "done": "完了",
+      "cancelled": "キャンセル"
+    },
+    "taskPriority": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "critical": "緊急"
+    },
+    "recurrence": {
+      "daily": "毎日",
+      "weekly": "毎週",
+      "monthly": "毎月",
+      "quarterly": "四半期ごと",
+      "yearly": "毎年"
+    },
+    "recurrenceUnit": {
+      "daily": "日",
+      "weekly": "週",
+      "monthly": "か月",
+      "quarterly": "四半期",
+      "yearly": "年"
     }
   },
   "folders": {
@@ -195,5 +266,38 @@
     "views": "Views",
     "myFolders": "My folders",
     "dragHint": "Drag to reorder"
+  },
+  "brdd": {
+    "snapshots": "{{count}} snapshots",
+    "refresh": "Refresh",
+    "create": "Create .brdd",
+    "snapshot": "Snapshot",
+    "snapshotHint": "Record a version snapshot even if nothing changed",
+    "empty": "No .brdd folder yet. It holds a short analysis of the project, version snapshots and a changelog — create it to start tracking.",
+    "size": "{{files}} files · {{loc}} LOC",
+    "tasks": "tasks {{done}}/{{total}}",
+    "analyzed": "analyzed {{when}}",
+    "lastSnapshot": "snapshot #{{n}} ({{reason}})",
+    "reason": {
+      "initial": "first",
+      "version": "version changed",
+      "commits": "new commits",
+      "manual": "manual"
+    },
+    "tab": {
+      "summary": "Summary",
+      "changes": "Changes",
+      "notes": "AI notes"
+    },
+    "notesPlaceholder": "Notes about the project — written by you or by an AI agent (BoardDo). Kept across refreshes.",
+    "notesHint": "Saved to .brdd/ai-summary.md",
+    "autoOnScan": "Maintain .brdd automatically",
+    "autoOnScanHint": "Refresh the folder of every project found or refreshed by a scan.",
+    "excludeFromGit": "Keep .brdd out of git",
+    "excludeFromGitHint": "Adds /.brdd/ to .git/info/exclude (local only) so the repository stays clean.",
+    "refreshAll": "Refresh .brdd for all projects",
+    "refreshAllDone": "Refreshed: {{ok}}, failed: {{failed}}",
+    "syncIssues": "Sync GitHub issues",
+    "issuesSynced": "Checked {{checked}} linked issues · tasks done: {{done}} · issues closed: {{closed}}"
   }
 }

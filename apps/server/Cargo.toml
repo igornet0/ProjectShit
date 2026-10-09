@@ -1,0 +1,32 @@
+[package]
+name = "project-hub-server"
+description = "Headless Project Hub with an HTTP API for external tools (BoardDo, scripts, agents)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "project-hub-server"
+path = "src/main.rs"
+
+[dependencies]
+project-hub-core = { workspace = true }
+project-hub-domain = { workspace = true }
+project-hub-database = { workspace = true }
+project-hub-brdd = { workspace = true }
+project-hub-git = { workspace = true }
+project-hub-executor = { workspace = true }
+project-hub-github = { workspace = true }
+
+axum = "0.8"
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+anyhow = { workspace = true }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+tempfile = "3"

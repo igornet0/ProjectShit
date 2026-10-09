@@ -24,7 +24,7 @@ pub struct GitHubCloneInput {
 
 #[tauri::command]
 pub async fn github_get_config(state: State<'_, SharedState>) -> Result<GitHubConfigResponse, String> {
-    let state = state.lock().await;
+    let state = state.inner();
     GitHubService::get_config(&state)
         .await
         .map_err(|e| e.to_string())
@@ -35,7 +35,7 @@ pub async fn github_connect(
     state: State<'_, SharedState>,
     input: GitHubConnectInput,
 ) -> Result<GitHubConfigResponse, String> {
-    let state = state.lock().await;
+    let state = state.inner();
     GitHubService::connect(&state, input.token, input.default_clone_dir)
         .await
         .map_err(|e| e.to_string())
@@ -45,8 +45,8 @@ pub async fn github_connect(
 pub async fn github_oauth_start(
     state: State<'_, SharedState>,
 ) -> Result<GitHubOAuthStartResponse, String> {
-    let mut state = state.lock().await;
-    GitHubService::oauth_start(&mut state)
+    let state = state.inner();
+    GitHubService::oauth_start(&state)
         .await
         .map_err(|e| e.to_string())
 }
@@ -56,15 +56,15 @@ pub async fn github_oauth_complete(
     state: State<'_, SharedState>,
     input: GitHubOAuthLoginInput,
 ) -> Result<GitHubConfigResponse, String> {
-    let mut state = state.lock().await;
-    GitHubService::oauth_complete(&mut state, input.default_clone_dir)
+    let state = state.inner();
+    GitHubService::oauth_complete(&state, input.default_clone_dir)
         .await
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub async fn github_disconnect(state: State<'_, SharedState>) -> Result<(), String> {
-    let state = state.lock().await;
+    let state = state.inner();
     GitHubService::disconnect(&state)
         .await
         .map_err(|e| e.to_string())
@@ -75,7 +75,7 @@ pub async fn github_save_config(
     state: State<'_, SharedState>,
     config: GitHubConfig,
 ) -> Result<GitHubConfigResponse, String> {
-    let state = state.lock().await;
+    let state = state.inner();
     GitHubService::save_config(&state, &config)
         .await
         .map_err(|e| e.to_string())
@@ -83,7 +83,7 @@ pub async fn github_save_config(
 
 #[tauri::command]
 pub async fn github_sync_repos(state: State<'_, SharedState>) -> Result<Vec<GitHubRepo>, String> {
-    let state = state.lock().await;
+    let state = state.inner();
     GitHubService::sync_repos(&state)
         .await
         .map_err(|e| e.to_string())
@@ -94,7 +94,7 @@ pub async fn github_clone_repo(
     state: State<'_, SharedState>,
     input: GitHubCloneInput,
 ) -> Result<Project, String> {
-    let state = state.lock().await;
+    let state = state.inner();
     GitHubService::clone_repo(&state, &input.full_name, input.target_dir)
         .await
         .map_err(|e| e.to_string())
@@ -105,7 +105,7 @@ pub async fn projects_list_hub(
     state: State<'_, SharedState>,
     include_archived: Option<bool>,
 ) -> Result<Vec<HubProjectEntry>, String> {
-    let state = state.lock().await;
+    let state = state.inner();
     ProjectService::list_hub_entries(&state, include_archived.unwrap_or(false))
         .await
         .map_err(|e| e.to_string())

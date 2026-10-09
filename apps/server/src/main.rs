@@ -23,8 +23,14 @@ async fn main() {
     let config = match Config::from_args() {
         Ok(c) => c,
         Err(msg) => {
+            // --help and --version are informational, not errors.
+            let info = msg.starts_with("project-hub-server ");
+            if info {
+                println!("{msg}");
+                std::process::exit(0);
+            }
             eprintln!("{msg}");
-            std::process::exit(if msg.starts_with("project-hub-server —") { 0 } else { 2 });
+            std::process::exit(2);
         }
     };
 

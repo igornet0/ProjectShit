@@ -130,8 +130,13 @@ refreshes every project touched by a scan.
 same database as the desktop app — exposed as a JSON API for scripts, AI agents and
 [BoardDo](https://github.com/igornet0) (which installs and supervises it as an extension).
 
+Release bundles include it: `Project Hub.app/Contents/MacOS/project-hub-server` (built by
+`scripts/build-server.sh` as Tauri's `beforeBuildCommand`), so tools such as BoardDo find an
+installed app and use its server directly.
+
 ```bash
 cargo build --release -p project-hub-server
+./target/release/project-hub-server --version            # project-hub-server 0.1.1
 ./target/release/project-hub-server --self-test          # end-to-end check on a temporary DB
 PROJECT_HUB_TOKEN=secret ./target/release/project-hub-server --listen 127.0.0.1:7878 --commands detected
 ```
@@ -187,6 +192,9 @@ make -f Makefile.build help
 
 # Native installers for current OS
 make -f Makefile.build bundle
+
+# Build and replace /Applications/Project Hub.app (macOS; quits a running app)
+make -f Makefile.build install-app TARGET=aarch64-apple-darwin
 
 # All macOS architectures (on macOS)
 make -f Makefile.build bundles-darwin

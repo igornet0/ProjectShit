@@ -114,6 +114,7 @@ help: ## Show targets and current host
 	@echo ""
 	@echo "Quick:"
 	@echo "  bundle              Native installers for this OS"
+	@echo "  install-app         Build and install Project Hub.app into /Applications (macOS)"
 	@echo "  bundles-native      All archs buildable on this host (no cross)"
 	@echo "  bundles-all         Every target (needs cross toolchains / OS VMs)"
 	@echo ""
@@ -308,6 +309,23 @@ collect: ## Copy bundle/ tree into bundles/<target>/
 	mkdir -p "$(BUNDLES_DIR)/$$dest_name"; \
 	rsync -a --delete "$$bundle_dir/" "$(BUNDLES_DIR)/$$dest_name/"; \
 	echo "→ $(BUNDLES_DIR)/$$dest_name/"
+
+# ── Local install (macOS) ────────────────────────────────────────────────────
+
+.PHONY: install-app
+APP_NAME    := Project Hub
+INSTALL_DIR ?= /Applications
+
+install-app: ## Build the native bundle and replace $(INSTALL_DIR)/Project Hub.app (quits a running app)
+	@$(MAKE) -f Makefile.build bundle TARGET="$(TARGET)"
+	@src="$(BUNDLES_DIR)/$(if $(TARGET),$(TARGET),native-$(HOST_OS)-$(HOST_ARCH))/macos/$(APP_NAME).app"; \
+	test -d "$$src" || { echo "no bundle at $$src"; exit 1; }; \
+	osascript -e 'tell application "$(APP_NAME)" to quit' >/dev/null 2>&1 || true; \
+	for i in $$(seq 1 15); do pgrep -f "$(APP_NAME).app/Contents/MacOS/project-hub$$" >/dev/null || break; sleep 1; done; \
+	rm -rf "$(INSTALL_DIR)/$(APP_NAME).app"; \
+	ditto "$$src" "$(INSTALL_DIR)/$(APP_NAME).app"; \
+	codesign --force --deep -s - "$(INSTALL_DIR)/$(APP_NAME).app"; \
+	echo "→ $(INSTALL_DIR)/$(APP_NAME).app ($$("$(INSTALL_DIR)/$(APP_NAME).app/Contents/MacOS/project-hub-server" --version))"
 
 # ── Clean ────────────────────────────────────────────────────────────────────
 

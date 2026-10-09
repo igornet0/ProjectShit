@@ -57,6 +57,7 @@ OPTIONS (env var in brackets):
   --db PATH              SQLite database (shared with the desktop app by default)   [PROJECT_HUB_DB]
   --commands POLICY      off | detected | any — which project commands may run   [PROJECT_HUB_COMMANDS, default off]
   --exit-on-stdin-eof    stop when stdin closes (for supervisors)
+  -V, --version          print `project-hub-server <version>` and exit
   -h, --help
 
 On start the server prints one line `PROJECT_HUB_READY {\"url\":…}` to stdout.";
@@ -88,6 +89,9 @@ impl Config {
                 "--exit-on-stdin-eof" => exit_on_stdin_eof = true,
                 "--self-test" => self_test = true,
                 "-h" | "--help" => return Err(USAGE.to_string()),
+                "-V" | "--version" => {
+                    return Err(format!("project-hub-server {}", env!("CARGO_PKG_VERSION")));
+                }
                 other => return Err(format!("unknown argument `{other}`\n\n{USAGE}")),
             }
         }
